@@ -1,5 +1,6 @@
 package dev.nevah5.nevexis.regionmap;
 
+import de.bluecolored.bluemap.api.BlueMapAPI;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -19,6 +20,6 @@ public class RegionMap implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		BlueMapAPI.onEnable(api -> LOGGER.info("RegionMap by Nevah5 has loaded!"));
 	}
 }
