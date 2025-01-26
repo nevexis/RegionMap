@@ -3,17 +3,19 @@ package dev.nevah5.nevexis.regionmap.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import dev.nevah5.nevexis.regionmap.api.BlueMapApi;
-import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
-import dev.nevah5.nevexis.regionmap.api.WorldGuardApi;
-import dev.nevah5.nevexis.regionmap.api.WorldGuardApiImpl;
+import dev.nevah5.nevexis.regionmap.RegionMap;
+import dev.nevah5.nevexis.regionmap.api.RegionMapApi;
+import dev.nevah5.nevexis.regionmap.api.RegionMapApiImpl;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RegionCommand {
-    private static final WorldGuardApi worldGuardApi = new WorldGuardApiImpl();
-    private static final BlueMapApi blueMapApi = new BlueMapApiImpl();
+    public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
+    private static final RegionMapApi regionMapApi = new RegionMapApiImpl();
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("region")
@@ -32,6 +34,10 @@ public class RegionCommand {
     }
 
     private static int claim(CommandContext<ServerCommandSource> context) {
+        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
+            LOGGER.error("Only players can claim regions!");
+            return 0;
+        }
         context.getSource().sendFeedback(() -> Text.literal("Region claimed!"), false);
         return 1;
     }
