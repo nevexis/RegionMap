@@ -22,10 +22,7 @@ public class RegionMap implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		BlueMapAPI.onEnable(api -> {
-			LOGGER.info("RegionMap by Nevah5 has loaded!");
-			LOGGER.info("BlueMap version: " + api.getBlueMapVersion());
-		});
+		LOGGER.info("RegionMap by Nevah5 initialized!");
 
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
