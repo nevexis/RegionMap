@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
@@ -49,27 +50,18 @@ public class BlueMapApiImpl implements BlueMapApi {
 
     @Override
     public void addRegion(final World world, final ChunkPos pos, final String name) {
-        final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
-        MarkerSet markerSet = MarkerSet.builder()
+        MarkerSet markerSet = loadMarkerSet(name).orElseGet(() -> MarkerSet.builder()
                 .label(name + "'s Regions")
-                .build();
-        if (Files.exists(markerSetPath)) {
-            try (FileReader reader = new FileReader(markerSetPath.toString())) {
-                markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
-            } catch (IOException ex) {
-                LOGGER.error("Failed to load region marker set", ex);
-            }
-        }
+                .build());
 
         int chunkX = pos.x;
         int chunkZ = pos.z;
 
         double minX = chunkX << 4;
         double minZ = chunkZ << 4;
-        double maxX = minX + 15;
-        double maxZ = minZ + 15;
+        double maxX = minX + 16;
+        double maxZ = minZ + 16;
 
-        // TODO: add dimension support
         final ExtrudeMarker marker = new ExtrudeMarker.Builder()
                 .label("Chunk " + chunkX + ", " + chunkZ)
                 .shape(Shape.builder()
@@ -93,14 +85,60 @@ public class BlueMapApiImpl implements BlueMapApi {
             }
         });
 
-        try (FileWriter writer = new FileWriter(REGION_DIRECTORY + name.toLowerCase() + ".json")) {
-            MarkerGson.INSTANCE.toJson(finalMarkerSet, writer);
-        } catch (IOException ex) {
-            LOGGER.error("Failed to save region marker set", ex);
+        saveMarkerSet(markerSet, name);
+    }
+
+    @Override
+    public void removeRegion(World world, ChunkPos pos, String name) {
+        final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
+        MarkerSet markerSet = MarkerSet.builder()
+                .label(name + "'s Regions")
+                .build();
+        if (Files.exists(markerSetPath)) {
+            try (FileReader reader = new FileReader(markerSetPath.toString())) {
+                markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
+            } catch (IOException ex) {
+                LOGGER.error("Failed to load region marker set", ex);
+            }
         }
+
+        int chunkX = pos.x;
+        int chunkZ = pos.z;
+
+        markerSet.getMarkers()
+                .remove(name.toLowerCase() + "-chunk-" + chunkX + "-" + chunkZ);
+
+        MarkerSet finalMarkerSet = markerSet;
+        api.getWorld(world).ifPresent(bmWorld -> {
+            for (BlueMapMap map : bmWorld.getMaps()) {
+                map.getMarkerSets().put(name.toLowerCase() + "-regions", finalMarkerSet);
+            }
+        });
+
+        saveMarkerSet(markerSet, name);
     }
 
     private Vector2d toPoint(double x, double z) {
         return new Vector2d(x, z);
+    }
+
+    private Optional<MarkerSet> loadMarkerSet(String name) {
+        final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
+        if (Files.exists(markerSetPath)) {
+            try (FileReader reader = new FileReader(markerSetPath.toString())) {
+                return Optional.of(MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class));
+            } catch (IOException ex) {
+                LOGGER.error("Failed to load region marker set", ex);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void saveMarkerSet(MarkerSet markerSet, String name) {
+        try (FileWriter writer = new FileWriter(REGION_DIRECTORY + name.toLowerCase() + ".json")) {
+            MarkerGson.INSTANCE.toJson(markerSet, writer);
+        } catch (IOException ex) {
+            LOGGER.error("Failed to save region marker set", ex);
+        }
     }
 }

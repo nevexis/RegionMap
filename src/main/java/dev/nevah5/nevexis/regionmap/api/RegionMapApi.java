@@ -5,4 +5,6 @@ import net.minecraft.server.command.ServerCommandSource;
 
 public interface RegionMapApi {
     void claim(Entity player, ServerCommandSource source);
+
+    void remove(Entity player, ServerCommandSource source);
 }

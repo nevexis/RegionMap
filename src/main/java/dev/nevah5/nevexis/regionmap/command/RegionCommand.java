@@ -48,7 +48,11 @@ public class RegionCommand {
     }
 
     private static int remove(CommandContext<ServerCommandSource> context) {
-        context.getSource().sendFeedback(() -> Text.literal("Region removed!"), false);
+        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
+            LOGGER.error("Only players can remove regions!");
+            return 0;
+        }
+        regionMapApi.remove(context.getSource().getEntity(), context.getSource());
         return 1;
     }
 

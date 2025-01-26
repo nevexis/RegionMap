@@ -24,7 +24,16 @@ public class RegionMapApiImpl implements RegionMapApi {
         source.sendFeedback(() -> Text.literal("Region claimed!"), false);
     }
 
-    private final ChunkPos getChunkPos(final Entity player) {
+    @Override
+    public void remove(Entity player, ServerCommandSource source) {
+        ChunkPos chunkPos = getChunkPos(player);
+
+        blueMapApi.removeRegion(player.getWorld(), chunkPos, player.getNameForScoreboard());
+
+        source.sendFeedback(() -> Text.literal("Region removed!"), false);
+    }
+
+    private ChunkPos getChunkPos(final Entity player) {
         Vec3d position = player.getPos();
         return new ChunkPos(new BlockPos((int) position.x, (int) position.y, (int) position.z));
     }
