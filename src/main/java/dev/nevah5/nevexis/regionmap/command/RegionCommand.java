@@ -38,7 +38,7 @@ public class RegionCommand {
             LOGGER.error("Only players can claim regions!");
             return 0;
         }
-        context.getSource().sendFeedback(() -> Text.literal("Region claimed!"), false);
+        regionMapApi.claim(context.getSource().getEntity(), context.getSource());
         return 1;
     }
 
