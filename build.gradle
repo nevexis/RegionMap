@@ -86,3 +86,11 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+repositories {
+	maven { url 'https://repo.bluecolored.de/releases' }
+}
+
+dependencies {
+	compileOnly 'de.bluecolored:bluemap-api:2.7.3'
+}
