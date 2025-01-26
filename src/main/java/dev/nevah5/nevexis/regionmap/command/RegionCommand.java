@@ -30,7 +30,18 @@ public class RegionCommand {
                         .requires(source -> source.hasPermissionLevel(2)))
                 .then(CommandManager.literal("name")
                         .then(CommandManager.argument("name", StringArgumentType.string())
-                                .executes(RegionCommand::name))));
+                                .executes(RegionCommand::name)))
+                .then(CommandManager.literal("team")
+                        .then(CommandManager.literal("create")
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .executes(RegionCommand::teamAdd)))
+                        .then(CommandManager.literal("list")
+                                .executes(RegionCommand::teamListAll)
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .executes(RegionCommand::teamList)))
+                        .then(CommandManager.literal("leave")
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .executes(RegionCommand::teamLeave)))));
     }
 
     private static int claim(CommandContext<ServerCommandSource> context) {
@@ -64,6 +75,25 @@ public class RegionCommand {
 
     private static int reload(CommandContext<ServerCommandSource> context) {
         context.getSource().sendFeedback(() -> Text.literal("Region reloaded!"), false);
+        return 1;
+    }
+
+    public static int teamAdd(CommandContext<ServerCommandSource> context) {
+        String teamName = StringArgumentType.getString(context, "name");
+        return 1;
+    }
+
+    public static int teamList(CommandContext<ServerCommandSource> context) {
+        String teamName = StringArgumentType.getString(context, "name");
+        return 1;
+    }
+
+    public static int teamListAll(CommandContext<ServerCommandSource> context) {
+        return 1;
+    }
+
+    public static int teamLeave(CommandContext<ServerCommandSource> context) {
+        String teamName = StringArgumentType.getString(context, "name");
         return 1;
     }
 }
