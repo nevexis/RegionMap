@@ -5,7 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
+import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
+import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Color;
+import dev.nevah5.nevexis.regionmap.model.Team;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +27,13 @@ public class RegionMapConfig {
     public static final String REGION_MAP_CONFIG_DIRECTORY = "config/regionmap/";
 
     public static List<Color> colors = new ArrayList<>();
+    public static List<Team> teams = new ArrayList<>();
+    public static List<ClaimedRegion> regions = new ArrayList<>();
 
     public static void init() {
         setupConfigDirectory("");
         setupConfigDirectory(BlueMapApiImpl.REGION_DIRECTORY);
+        setupConfigDirectory(TeamApiImpl.TEAM_DIRECTORY);
         setupConfigFile("colors.json", Color.getDefaultConfig());
 
         loadData();
@@ -36,8 +42,11 @@ public class RegionMapConfig {
     }
 
     private static void loadData() {
-        Type listType = new TypeToken<List<Color>>() {}.getType();
-        colors = readConfigFile("colors.json", listType);
+        Type colorsType = new TypeToken<List<Color>>() {}.getType();
+        colors = readConfigFile("colors.json", colorsType);
+
+        Type teamsType = new TypeToken<List<Team>>() {}.getType();
+        teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, teamsType);
     }
 
     public static <T> void setupConfigFile(String name, T data) {
@@ -93,8 +102,29 @@ public class RegionMapConfig {
     }
 
 
-    public static <T> List<T> readConfigFiles(String directory, Class<T> clazz) {
-        // TODO
-        return new ArrayList<>();
+    public static <T> List<T> readConfigFiles(String directory, Type type) {
+        Path configDirectory = Paths.get(REGION_MAP_CONFIG_DIRECTORY + directory);
+        Gson gson = new Gson();
+        List<T> data = new ArrayList<>();
+
+        try {
+            if (Files.exists(configDirectory)) {
+                Files.list(configDirectory).forEach(file -> {
+                    try {
+                        String json = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                        T fileData = gson.fromJson(json, type);
+                        data.add(fileData);
+                        LOGGER.info("Data read from config file: " + file.toAbsolutePath());
+                    } catch (IOException ex) {
+                        LOGGER.error("Failed to read config file: " + file.toAbsolutePath(), ex);
+                    }
+                });
+            } else {
+                LOGGER.error("Config directory does not exist: " + configDirectory.toAbsolutePath());
+            }
+        } catch (IOException ex) {
+            LOGGER.error("Failed to read config directory: " + configDirectory.toAbsolutePath(), ex);
+        }
+        return data;
     }
 }
