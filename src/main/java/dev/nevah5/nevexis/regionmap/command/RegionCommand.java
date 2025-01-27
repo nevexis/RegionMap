@@ -7,8 +7,11 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApi;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApiImpl;
+import dev.nevah5.nevexis.regionmap.api.TeamApi;
+import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Color;
+import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -17,9 +20,12 @@ import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 public class RegionCommand {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
     private static final RegionMapApi regionMapApi = new RegionMapApiImpl();
+    private static final TeamApi teamApi = new TeamApiImpl();
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> colorSuggestionProvider = (context, builder) -> {
@@ -91,7 +97,28 @@ public class RegionCommand {
     }
 
     public static int teamAdd(CommandContext<ServerCommandSource> context) {
-        String teamName = StringArgumentType.getString(context, "name");
+        String team = StringArgumentType.getString(context, "name");
+        String color = StringArgumentType.getString(context, "color");
+        String display = StringArgumentType.getString(context, "display");
+
+        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
+            LOGGER.error("Only players can create teams!");
+            return 0;
+        }
+
+        try {
+            teamApi.createTeam(
+                    Team.builder()
+                            .color(RegionMapConfig.colors.stream().filter(c -> c.getName().equals(color)).findFirst().orElse(null))
+                            .displayName(display)
+                            .name(team)
+                            .owner(Objects.requireNonNull(context.getSource().getPlayer()).getUuid())
+                            .build(),
+                    context.getSource());
+        } catch (IllegalArgumentException e) {
+            context.getSource().sendFeedback(() -> Text.literal("Failed to create team: " + e.getMessage()), false);
+            return 0;
+        }
         return 1;
     }
 
