@@ -65,8 +65,8 @@ public class Team {
                 throw new IllegalArgumentException("Team is missing required fields!");
             if (team.displayName.length() > 24)
                 throw new IllegalArgumentException("Display name cannot exceed 24 characters!");
-            if (!team.displayName.matches("[a-zA-Z0-9-_!?;]+"))
-                throw new IllegalArgumentException("Display name  contains invalid characters!");
+            if (!team.displayName.matches("[a-zA-Z0-9-_!?; ]+"))
+                throw new IllegalArgumentException("Display name contains invalid characters!");
             if (team.displayName.length() < 5)
                 throw new IllegalArgumentException("Display name must be at least 5 characters long!");
             if (!team.displayName.matches(".*[a-zA-Z].*"))
