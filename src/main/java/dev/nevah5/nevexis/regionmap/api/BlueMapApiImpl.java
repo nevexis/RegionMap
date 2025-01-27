@@ -10,6 +10,7 @@ import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Shape;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
+import dev.nevah5.nevexis.regionmap.model.Chunk;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -39,26 +40,18 @@ public class BlueMapApiImpl implements BlueMapApi {
     }
 
     @Override
-    public void addRegion(final World world, final ChunkPos pos, final String name) {
+    public void addRegion(final World world, final Chunk chunk, final String name) {
         MarkerSet markerSet = loadMarkerSet(name).orElseGet(() -> MarkerSet.builder()
                 .label("Team " + name)
                 .build());
 
-        int chunkX = pos.x;
-        int chunkZ = pos.z;
-
-        double minX = chunkX << 4;
-        double minZ = chunkZ << 4;
-        double maxX = minX + 16;
-        double maxZ = minZ + 16;
-
         final ExtrudeMarker marker = new ExtrudeMarker.Builder()
-                .label("Chunk " + chunkX + ", " + chunkZ)
+                .label("Chunk " + chunk.getChunkX() + ", " + chunk.getChunkZ())
                 .shape(Shape.builder()
-                        .addPoint(toPoint(minX, minZ))
-                        .addPoint(toPoint(maxX, minZ))
-                        .addPoint(toPoint(maxX, maxZ))
-                        .addPoint(toPoint(minX, maxZ))
+                        .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
+                        .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
+                        .addPoint(toPoint(chunk.getMaxX(), chunk.getMaxZ()))
+                        .addPoint(toPoint(chunk.getMinX(), chunk.getMaxZ()))
                         .build(),
                         EXTRUDE_FROM,
                         EXTRUDE_TO)
@@ -66,7 +59,7 @@ public class BlueMapApiImpl implements BlueMapApi {
                 .build();
 
         markerSet.getMarkers()
-                .put(name.toLowerCase() + "-chunk-" + chunkX + "-" + chunkZ, marker);
+                .put(name.toLowerCase() + "-chunk-" + chunk.getChunkX() + "-" + chunk.getChunkZ(), marker);
 
         MarkerSet finalMarkerSet = markerSet;
         api.getWorld(world).ifPresent(bmWorld -> {
@@ -79,7 +72,7 @@ public class BlueMapApiImpl implements BlueMapApi {
     }
 
     @Override
-    public void removeRegion(World world, ChunkPos pos, String name) {
+    public void removeRegion(World world, Chunk chunk, String name) {
         final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
         MarkerSet markerSet = MarkerSet.builder()
                 .label("Team " + name)
@@ -92,11 +85,8 @@ public class BlueMapApiImpl implements BlueMapApi {
             }
         }
 
-        int chunkX = pos.x;
-        int chunkZ = pos.z;
-
         markerSet.getMarkers()
-                .remove(name.toLowerCase() + "-chunk-" + chunkX + "-" + chunkZ);
+                .remove(name.toLowerCase() + "-chunk-" + chunk.getChunkX() + "-" + chunk.getChunkZ());
 
         MarkerSet finalMarkerSet = markerSet;
         api.getWorld(world).ifPresent(bmWorld -> {

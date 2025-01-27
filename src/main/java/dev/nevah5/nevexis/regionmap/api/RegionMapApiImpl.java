@@ -1,12 +1,10 @@
 package dev.nevah5.nevexis.regionmap.api;
 
 import dev.nevah5.nevexis.regionmap.RegionMap;
+import dev.nevah5.nevexis.regionmap.model.Chunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,24 +15,15 @@ public class RegionMapApiImpl implements RegionMapApi {
 
     @Override
     public void claim(final Entity player, final ServerCommandSource source) {
-        ChunkPos chunkPos = getChunkPos(player);
-
-        blueMapApi.addRegion(player.getWorld(), chunkPos, player.getNameForScoreboard());
-
+        final Chunk chunk = Chunk.fromPlayerPos(player);
+        blueMapApi.addRegion(player.getWorld(), chunk, player.getNameForScoreboard());
         source.sendFeedback(() -> Text.literal("Region claimed!"), false);
     }
 
     @Override
     public void remove(Entity player, ServerCommandSource source) {
-        ChunkPos chunkPos = getChunkPos(player);
-
-        blueMapApi.removeRegion(player.getWorld(), chunkPos, player.getNameForScoreboard());
-
+        final Chunk chunk = Chunk.fromPlayerPos(player);
+        blueMapApi.removeRegion(player.getWorld(), chunk, player.getNameForScoreboard());
         source.sendFeedback(() -> Text.literal("Region removed!"), false);
-    }
-
-    private ChunkPos getChunkPos(final Entity player) {
-        Vec3d position = player.getPos();
-        return new ChunkPos(new BlockPos((int) position.x, (int) position.y, (int) position.z));
     }
 }
