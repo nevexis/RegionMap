@@ -9,6 +9,7 @@ import de.bluecolored.bluemap.api.markers.MarkerSet;
 import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Shape;
 import dev.nevah5.nevexis.regionmap.RegionMap;
+import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -24,7 +25,7 @@ import java.util.Optional;
 
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
-    private static final String REGION_DIRECTORY = RegionMap.REGION_MAP_CONFIG_DIRECTORY + "regions/";
+    private static final String REGION_DIRECTORY = "regions/";
     private static final float EXTRUDE_FROM = -64;
     private static final float EXTRUDE_TO = 319;
 
@@ -37,15 +38,7 @@ public class BlueMapApiImpl implements BlueMapApi {
     }
 
     public static void setup() {
-        Path configDirectory = Paths.get(REGION_DIRECTORY);
-        try {
-            if (Files.notExists(configDirectory)) {
-                Files.createDirectories(configDirectory);
-                LOGGER.info("Config directory created at: " + configDirectory.toAbsolutePath());
-            }
-        } catch (IOException ex) {
-            LOGGER.error("Failed to create config directory", ex);
-        }
+        RegionMapConfig.setupConfigDirectory(REGION_DIRECTORY);
     }
 
     @Override
