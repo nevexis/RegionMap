@@ -61,10 +61,9 @@ public class BlueMapApiImpl implements BlueMapApi {
         markerSet.getMarkers()
                 .put(name.toLowerCase() + "-chunk-" + chunk.getChunkX() + "-" + chunk.getChunkZ(), marker);
 
-        MarkerSet finalMarkerSet = markerSet;
         api.getWorld(world).ifPresent(bmWorld -> {
             for (BlueMapMap map : bmWorld.getMaps()) {
-                map.getMarkerSets().put(name.toLowerCase() + "-regions", finalMarkerSet);
+                map.getMarkerSets().put(name.toLowerCase() + "-regions", markerSet);
             }
         });
 

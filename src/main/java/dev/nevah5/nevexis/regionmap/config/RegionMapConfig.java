@@ -54,8 +54,6 @@ public class RegionMapConfig {
                     writer.write(json);
                     LOGGER.info("Data written to config file: " + configFile.toAbsolutePath());
                 }
-            } else {
-
             }
         } catch (IOException ex) {
             LOGGER.error("Failed to create or write to config file: " + configFile.toAbsolutePath(), ex);

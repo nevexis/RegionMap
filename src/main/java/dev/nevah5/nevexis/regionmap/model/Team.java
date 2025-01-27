@@ -8,6 +8,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class Team {
+    private UUID teamId;
     private UUID owner;
     private String name;
     private String displayName;
