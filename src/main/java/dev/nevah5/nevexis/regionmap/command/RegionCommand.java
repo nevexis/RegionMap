@@ -3,9 +3,13 @@ package dev.nevah5.nevexis.regionmap.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApi;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApiImpl;
+import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
+import dev.nevah5.nevexis.regionmap.config.model.Color;
+import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -18,6 +22,10 @@ public class RegionCommand {
     private static final RegionMapApi regionMapApi = new RegionMapApiImpl();
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        SuggestionProvider<ServerCommandSource> colorSuggestionProvider = (context, builder) -> {
+            String[] colors = RegionMapConfig.colors.stream().map(Color::getName).toArray(String[]::new);
+            return CommandSource.suggestMatching(colors, builder);
+        };
         dispatcher.register(CommandManager.literal("region")
                 .then(CommandManager.literal("claim")
                         .executes(RegionCommand::claim))
@@ -34,7 +42,10 @@ public class RegionCommand {
                 .then(CommandManager.literal("team")
                         .then(CommandManager.literal("create")
                                 .then(CommandManager.argument("name", StringArgumentType.string())
-                                        .executes(RegionCommand::teamAdd)))
+                                        .then(CommandManager.argument("color", StringArgumentType.word())
+                                                .suggests(colorSuggestionProvider)
+                                                .then(CommandManager.argument("display", StringArgumentType.greedyString())
+                                                        .executes(RegionCommand::teamAdd)))))
                         .then(CommandManager.literal("list")
                                 .executes(RegionCommand::teamListAll)
                                 .then(CommandManager.argument("name", StringArgumentType.string())
@@ -74,6 +85,7 @@ public class RegionCommand {
     }
 
     private static int reload(CommandContext<ServerCommandSource> context) {
+        RegionMapConfig.init();
         context.getSource().sendFeedback(() -> Text.literal("Region reloaded!"), false);
         return 1;
     }

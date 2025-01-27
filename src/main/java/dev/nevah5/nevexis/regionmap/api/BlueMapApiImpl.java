@@ -25,7 +25,8 @@ import java.util.Optional;
 
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
-    private static final String REGION_DIRECTORY = "regions/";
+    public static final String REGION_DIRECTORY = "regions/";
+
     private static final float EXTRUDE_FROM = -64;
     private static final float EXTRUDE_TO = 319;
 
@@ -37,14 +38,10 @@ public class BlueMapApiImpl implements BlueMapApi {
         );
     }
 
-    public static void setup() {
-        RegionMapConfig.setupConfigDirectory(REGION_DIRECTORY);
-    }
-
     @Override
     public void addRegion(final World world, final ChunkPos pos, final String name) {
         MarkerSet markerSet = loadMarkerSet(name).orElseGet(() -> MarkerSet.builder()
-                .label(name + "'s Regions")
+                .label("Team " + name)
                 .build());
 
         int chunkX = pos.x;
@@ -85,7 +82,7 @@ public class BlueMapApiImpl implements BlueMapApi {
     public void removeRegion(World world, ChunkPos pos, String name) {
         final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
         MarkerSet markerSet = MarkerSet.builder()
-                .label(name + "'s Regions")
+                .label("Team " + name)
                 .build();
         if (Files.exists(markerSetPath)) {
             try (FileReader reader = new FileReader(markerSetPath.toString())) {

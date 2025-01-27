@@ -1,6 +1,5 @@
 package dev.nevah5.nevexis.regionmap;
 
-import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.command.RegionCommand;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import net.fabricmc.api.ModInitializer;
@@ -18,7 +17,6 @@ public class RegionMap implements ModInitializer {
 		LOGGER.info("RegionMap by Nevah5 initialized!");
 
 		RegionMapConfig.init();
-		BlueMapApiImpl.setup();
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			RegionCommand.register(dispatcher);
