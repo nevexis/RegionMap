@@ -16,6 +16,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,8 +46,7 @@ public class RegionMapConfig {
         Type colorsType = new TypeToken<List<Color>>() {}.getType();
         colors = readConfigFile("colors.json", colorsType);
 
-        Type teamsType = new TypeToken<List<Team>>() {}.getType();
-        teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, teamsType);
+        teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
     }
 
     public static <T> void setupConfigFile(String name, T data) {
@@ -102,29 +102,33 @@ public class RegionMapConfig {
     }
 
 
+    // TODO: fix  this error on startup
     public static <T> List<T> readConfigFiles(String directory, Type type) {
         Path configDirectory = Paths.get(REGION_MAP_CONFIG_DIRECTORY + directory);
-        Gson gson = new Gson();
         List<T> data = new ArrayList<>();
 
         try {
-            if (Files.exists(configDirectory)) {
-                Files.list(configDirectory).forEach(file -> {
-                    try {
-                        String json = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-                        T fileData = gson.fromJson(json, type);
-                        data.add(fileData);
-                        LOGGER.info("Data read from config file: " + file.toAbsolutePath());
-                    } catch (IOException ex) {
-                        LOGGER.error("Failed to read config file: " + file.toAbsolutePath(), ex);
+            if (Files.exists(configDirectory) && Files.isDirectory(configDirectory)) {
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDirectory)) {
+                    for (Path file : stream) {
+                        if (Files.isRegularFile(file)) {
+                            T result = readConfigFile(file.toString(), type);
+                            if (result != null) {
+                                data.add(result);
+                            } else {
+                                LOGGER.warn("Failed to read file: " + file.getFileName());
+                            }
+                        }
                     }
-                });
+                }
             } else {
-                LOGGER.error("Config directory does not exist: " + configDirectory.toAbsolutePath());
+                LOGGER.error("Config directory does not exist or is not a directory: " + configDirectory.toAbsolutePath());
             }
         } catch (IOException ex) {
             LOGGER.error("Failed to read config directory: " + configDirectory.toAbsolutePath(), ex);
         }
+
         return data;
     }
+
 }
