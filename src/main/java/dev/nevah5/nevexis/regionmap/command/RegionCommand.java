@@ -8,7 +8,7 @@ import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApi;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApiImpl;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
-import dev.nevah5.nevexis.regionmap.config.model.Color;
+import dev.nevah5.nevexis.regionmap.model.Color;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;

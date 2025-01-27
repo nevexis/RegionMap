@@ -5,12 +5,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
-import dev.nevah5.nevexis.regionmap.config.model.Color;
+import dev.nevah5.nevexis.regionmap.model.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -31,10 +30,14 @@ public class RegionMapConfig {
         setupConfigDirectory(BlueMapApiImpl.REGION_DIRECTORY);
         setupConfigFile("colors.json", Color.getDefaultConfig());
 
-        Type listType = new TypeToken<List<Color>>() {}.getType();
-        colors = readConfigFile("colors.json", listType);
+        loadData();
 
         LOGGER.info("Loaded config files.");
+    }
+
+    private static void loadData() {
+        Type listType = new TypeToken<List<Color>>() {}.getType();
+        colors = readConfigFile("colors.json", listType);
     }
 
     public static <T> void setupConfigFile(String name, T data) {

@@ -1,4 +1,4 @@
-package dev.nevah5.nevexis.regionmap.config.model;
+package dev.nevah5.nevexis.regionmap.model;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
