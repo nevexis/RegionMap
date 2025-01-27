@@ -12,13 +12,23 @@ import net.minecraft.util.math.Vec3d;
 @Getter
 public class Chunk {
     private final ChunkPos pos;
-    private final int chunkX = pos.x;
-    private final int chunkZ = pos.z;
+    private final int chunkX;
+    private final int chunkZ;
 
-    private final double minX = chunkX << 4;
-    private final double minZ = chunkZ << 4;
-    private final double maxX = minX + 16;
-    private final double maxZ = minZ + 16;
+    private final double minX;
+    private final double minZ;
+    private final double maxX;
+    private final double maxZ;
+
+    public Chunk(ChunkPos pos) {
+        this.pos = pos;
+        this.chunkX = pos.x;
+        this.chunkZ = pos.z;
+        this.minX = chunkX << 4;
+        this.minZ = chunkZ << 4;
+        this.maxX = minX + 16;
+        this.maxZ = minZ + 16;
+    }
 
     public static Chunk fromPlayerPos(final Entity player) {
         return fromPlayerPos(player.getPos());
