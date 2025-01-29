@@ -70,6 +70,12 @@ public class BlueMapApiImpl implements BlueMapApi {
         }
     }
 
+    private static void loadMarkerSetByTeam(Team team) {
+        loadMarkerSetByTeam(team, RegionMapConfig.regions.stream()
+                .filter(region -> region.getTeam().equals(team.getTeamId()))
+                .toList());
+    }
+
     private static void loadMarkerSetByTeam(Team team, List<ClaimedRegion> regions) {
         MarkerSet markerSet = MarkerSet.builder()
                 .label(team.getDisplayName())
@@ -78,7 +84,7 @@ public class BlueMapApiImpl implements BlueMapApi {
         for (ClaimedRegion region : regions) {
             Chunk chunk = region.toChunk();
             final ExtrudeMarker marker = new ExtrudeMarker.Builder()
-                    .label("Chunk " + region.toChunk().getChunkX() + ", " + region.toChunk().getChunkZ())
+                    .label(region.getRegionName())
                     .shape(Shape.builder()
                                     .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
                                     .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
@@ -92,7 +98,7 @@ public class BlueMapApiImpl implements BlueMapApi {
                     .build();
 
             markerSet.getMarkers()
-                    .put(region.getId().toString(), marker);
+                    .put(region.getRegionId(), marker);
         }
 
         api.getWorld(World.OVERWORLD).ifPresent(bmWorld -> {
@@ -109,10 +115,11 @@ public class BlueMapApiImpl implements BlueMapApi {
         ClaimedRegion region = ClaimedRegion.builder()
                 .team(team.getTeamId())
                 .pos(player.getPos())
-                .setClaimedAt()
+                .claimedAt((int) (System.currentTimeMillis() / 1000))
                 .build();
         RegionMapConfig.regions.add(region);
-        RegionMapConfig.setupConfigFile(REGION_DIRECTORY + region.getId() + ".json", region);
+        RegionMapConfig.setupConfigFile(REGION_DIRECTORY + region.getRegionId() + ".json", region);
+        loadMarkerSetByTeam(team);
     }
 
     @Override
