@@ -128,6 +128,8 @@ public class RegionCommand {
     }
 
     public static int teamListAll(CommandContext<ServerCommandSource> context) {
+        context.getSource().sendFeedback(() -> Text.literal("Listing teams..."), false);
+        RegionMapConfig.teams.forEach(team -> context.getSource().sendFeedback(() -> Text.literal(team.getName()), false));
         return 1;
     }
 
