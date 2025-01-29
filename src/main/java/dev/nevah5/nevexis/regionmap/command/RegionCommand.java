@@ -54,18 +54,18 @@ public class RegionCommand {
                 .then(CommandManager.literal("reload")
                         .executes(RegionCommand::reload)
                         .requires(source -> source.hasPermissionLevel(2)))
-                .then(CommandManager.literal("name")
+                .then(CommandManager.literal("name") // TODO: implement naming regions
                         .then(CommandManager.argument("name", StringArgumentType.string())
                                 .executes(RegionCommand::name)))
                 .then(CommandManager.literal("team")
                         .then(CommandManager.literal("invite")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                .then(CommandManager.argument("team", StringArgumentType.string())
                                         .suggests(teamSuggestionProvider)
                                         .then(CommandManager.argument("player", StringArgumentType.string())
                                                 .suggests(onlinePlayersProvider)
                                                 .executes(RegionCommand::teamInvite))))
                         .then(CommandManager.literal("kick")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                .then(CommandManager.argument("team", StringArgumentType.string())
                                         .suggests(teamSuggestionProvider)
                                         .then(CommandManager.argument("player", StringArgumentType.string())
                                                 .suggests(onlinePlayersProvider)
@@ -78,15 +78,15 @@ public class RegionCommand {
                                                         .executes(RegionCommand::teamAdd)))))
                         .then(CommandManager.literal("list")
                                 .executes(RegionCommand::teamListAll)
-                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                .then(CommandManager.argument("team", StringArgumentType.string())
                                         .suggests(teamSuggestionProvider)
                                         .executes(RegionCommand::teamList)))
                         .then(CommandManager.literal("leave")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                .then(CommandManager.argument("team", StringArgumentType.string())
                                         .suggests(teamSuggestionProvider)
                                         .executes(RegionCommand::teamLeave)))
                         .then(CommandManager.literal("delete")
-                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                .then(CommandManager.argument("team", StringArgumentType.string())
                                         .suggests(teamSuggestionProvider)
                                         .executes(RegionCommand::teamDelete)))
                 ));
@@ -132,7 +132,7 @@ public class RegionCommand {
     }
 
     public static int teamList(CommandContext<ServerCommandSource> context) {
-        String teamName = StringArgumentType.getString(context, "name");
+        String teamName = StringArgumentType.getString(context, "team");
         return teamApi.listTeam(teamName, context.getSource());
     }
 
@@ -141,24 +141,24 @@ public class RegionCommand {
     }
 
     public static int teamLeave(CommandContext<ServerCommandSource> context) {
-        String teamName = StringArgumentType.getString(context, "name");
+        String teamName = StringArgumentType.getString(context, "team");
         return teamApi.leaveTeam(teamName, context.getSource());
     }
 
     public static int teamDelete(CommandContext<ServerCommandSource> context) {
-        String teamName = StringArgumentType.getString(context, "name");
+        String teamName = StringArgumentType.getString(context, "team");
         return teamApi.deleteTeam(teamName, context.getSource());
     }
 
     public static int teamInvite(CommandContext<ServerCommandSource> context) {
         String playerName = StringArgumentType.getString(context, "player");
-        String teamName = StringArgumentType.getString(context, "name");
+        String teamName = StringArgumentType.getString(context, "team");
         return teamApi.invitePlayer(playerName, teamName, context.getSource());
     }
 
     public static int teamKick(CommandContext<ServerCommandSource> context) {
         String playerName = StringArgumentType.getString(context, "player");
-        String teamName = StringArgumentType.getString(context, "name");
+        String teamName = StringArgumentType.getString(context, "team");
         return teamApi.kickPlayer(playerName, teamName, context.getSource());
     }
 }

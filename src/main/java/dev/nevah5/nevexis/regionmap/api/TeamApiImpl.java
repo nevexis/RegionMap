@@ -38,7 +38,7 @@ public class TeamApiImpl implements TeamApi {
             }
             RegionMapConfig.teams.add(team);
             setupConfigFile(TEAM_DIRECTORY + team.getName() + ".json", team);
-            source.sendFeedback(() -> Text.literal(team.getDisplayName() + " created"), false);
+            source.sendFeedback(() -> Text.literal(team.getName() + " created"), false);
             return 1;
         } catch (IllegalArgumentException e) {
             source.sendFeedback(() -> Text.literal("Failed to create team: " + e.getMessage()), false);
@@ -79,6 +79,8 @@ public class TeamApiImpl implements TeamApi {
         RegionMapConfig.deleteConfigFile(TEAM_DIRECTORY + teamName + ".json");
         source.sendFeedback(() -> Text.literal("Deleted team " + teamName + "!"), false);
         return 1;
+
+        // TODO: Implement deleting all regions claimed by the team
     }
 
     @Override
