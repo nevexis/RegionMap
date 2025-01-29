@@ -126,29 +126,10 @@ public class RegionCommand {
     }
 
     public static int teamAdd(CommandContext<ServerCommandSource> context) {
-        // TODO: move this into api impl
         String team = StringArgumentType.getString(context, "name");
         String color = StringArgumentType.getString(context, "color");
         String display = StringArgumentType.getString(context, "display");
-
-        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
-            LOGGER.error("Only players can create teams!");
-            return 0;
-        }
-
-        try {
-            return teamApi.createTeam(
-                    Team.builder()
-                            .color(RegionMapConfig.colors.stream().filter(c -> c.getName().equals(color)).findFirst().orElse(null))
-                            .displayName(display)
-                            .name(team)
-                            .owner(Objects.requireNonNull(context.getSource().getPlayer()).getUuid())
-                            .build(),
-                    context.getSource());
-        } catch (IllegalArgumentException e) {
-            context.getSource().sendFeedback(() -> Text.literal("Failed to create team: " + e.getMessage()), false);
-            return 0;
-        }
+        return teamApi.createTeam(team, color, display, context.getSource());
     }
 
     public static int teamList(CommandContext<ServerCommandSource> context) {

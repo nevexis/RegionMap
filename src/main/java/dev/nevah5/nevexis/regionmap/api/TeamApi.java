@@ -4,7 +4,7 @@ import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.server.command.ServerCommandSource;
 
 public interface TeamApi {
-    int createTeam(Team team, ServerCommandSource source);
+    int createTeam(String teamName, String color, String display, ServerCommandSource source);
 
     int leaveTeam(String teamName, ServerCommandSource source);
 

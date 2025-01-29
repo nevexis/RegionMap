@@ -7,6 +7,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import javax.swing.text.html.parser.Entity;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,15 +18,32 @@ public class TeamApiImpl implements TeamApi {
     public static final String TEAM_DIRECTORY = "teams/";
 
     @Override
-    public int createTeam(Team team, ServerCommandSource source) {
-        if (RegionMapConfig.teams.stream().anyMatch(t -> t.getName().equals(team.getName()))) {
-            source.sendFeedback(() -> Text.literal("Team with name " + team.getName() + " already exists"), false);
+    public int createTeam(String teamName, String color, String display, ServerCommandSource source) {
+
+        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
+            LOGGER.error("Only players can create teams!");
             return 0;
         }
-        RegionMapConfig.teams.add(team);
-        setupConfigFile(TEAM_DIRECTORY + team.getName() + ".json", team);
-        source.sendFeedback(() -> Text.literal(team.getDisplayName() + " created"), false);
-        return 1;
+
+        try {
+            Team team = Team.builder()
+                    .color(RegionMapConfig.colors.stream().filter(c -> c.getName().equals(color)).findFirst().orElse(null))
+                    .displayName(display)
+                    .name(teamName)
+                    .owner(Objects.requireNonNull(source.getPlayer()).getUuid())
+                    .build();
+            if (RegionMapConfig.teams.stream().anyMatch(t -> t.getName().equals(team.getName()))) {
+                source.sendFeedback(() -> Text.literal("Team with name " + team.getName() + " already exists"), false);
+                return 0;
+            }
+            RegionMapConfig.teams.add(team);
+            setupConfigFile(TEAM_DIRECTORY + team.getName() + ".json", team);
+            source.sendFeedback(() -> Text.literal(team.getDisplayName() + " created"), false);
+            return 1;
+        } catch (IllegalArgumentException e) {
+            source.sendFeedback(() -> Text.literal("Failed to create team: " + e.getMessage()), false);
+            return 0;
+        }
     }
 
     @Override
@@ -74,7 +92,7 @@ public class TeamApiImpl implements TeamApi {
 
         source.sendFeedback(() -> Text.literal("Name: " + team.getDisplayName()), false);
         source.sendFeedback(() -> Text.literal("Owner: " + team.getOwner()), false);
-        if(!team.getMembers().isEmpty()) {
+        if (!team.getMembers().isEmpty()) {
             source.sendFeedback(() -> Text.literal("Members:"), false);
             team.getMembers().forEach(m -> source.sendFeedback(() -> Text.literal(m.toString()), false));
         } else {
