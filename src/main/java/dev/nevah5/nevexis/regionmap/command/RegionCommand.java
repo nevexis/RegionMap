@@ -12,6 +12,7 @@ import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Color;
 import dev.nevah5.nevexis.regionmap.model.Team;
+import lombok.Setter;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -27,14 +28,26 @@ public class RegionCommand {
     private static final RegionMapApi regionMapApi = new RegionMapApiImpl();
     private static final TeamApi teamApi = new TeamApiImpl();
 
+    private static SuggestionProvider<ServerCommandSource> teamSuggestionProvider;
+
+    public static void updateTeamSuggestionProvider() {
+        teamSuggestionProvider = (context, builder) -> {
+            String[] teams = RegionMapConfig.teams.stream().map(Team::getName).toArray(String[]::new);
+            return CommandSource.suggestMatching(teams, builder);
+        };
+    }
+
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> colorSuggestionProvider = (context, builder) -> {
             String[] colors = RegionMapConfig.colors.stream().map(Color::getName).toArray(String[]::new);
             return CommandSource.suggestMatching(colors, builder);
         };
+        updateTeamSuggestionProvider();
         dispatcher.register(CommandManager.literal("region")
                 .then(CommandManager.literal("claim")
-                        .executes(RegionCommand::claim))
+                        .then(CommandManager.argument("team", StringArgumentType.string())
+                                .suggests(teamSuggestionProvider)
+                                .executes(RegionCommand::claim)))
                 .then(CommandManager.literal("list")
                         .executes(RegionCommand::list))
                 .then(CommandManager.literal("remove")
@@ -55,10 +68,17 @@ public class RegionCommand {
                         .then(CommandManager.literal("list")
                                 .executes(RegionCommand::teamListAll)
                                 .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .suggests(teamSuggestionProvider)
                                         .executes(RegionCommand::teamList)))
                         .then(CommandManager.literal("leave")
                                 .then(CommandManager.argument("name", StringArgumentType.string())
-                                        .executes(RegionCommand::teamLeave)))));
+                                        .suggests(teamSuggestionProvider)
+                                        .executes(RegionCommand::teamLeave)))
+                        .then(CommandManager.literal("delete")
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .suggests(teamSuggestionProvider)
+                                        .executes(RegionCommand::teamDelete)))
+                ));
     }
 
     private static int claim(CommandContext<ServerCommandSource> context) {
@@ -91,12 +111,18 @@ public class RegionCommand {
     }
 
     private static int reload(CommandContext<ServerCommandSource> context) {
-        RegionMapConfig.init();
-        context.getSource().sendFeedback(() -> Text.literal("Region reloaded!"), false);
+        try {
+            RegionMapConfig.init();
+            context.getSource().sendFeedback(() -> Text.literal("Region reloaded!"), false);
+        } catch (Exception ex) {
+            LOGGER.error("Failed to reload mod: " + ex.getMessage());
+            context.getSource().sendFeedback(() -> Text.literal("Failed to reload!"), false);
+        }
         return 1;
     }
 
     public static int teamAdd(CommandContext<ServerCommandSource> context) {
+        // TODO: move this into api impl
         String team = StringArgumentType.getString(context, "name");
         String color = StringArgumentType.getString(context, "color");
         String display = StringArgumentType.getString(context, "display");
@@ -107,7 +133,7 @@ public class RegionCommand {
         }
 
         try {
-            teamApi.createTeam(
+            return teamApi.createTeam(
                     Team.builder()
                             .color(RegionMapConfig.colors.stream().filter(c -> c.getName().equals(color)).findFirst().orElse(null))
                             .displayName(display)
@@ -119,22 +145,24 @@ public class RegionCommand {
             context.getSource().sendFeedback(() -> Text.literal("Failed to create team: " + e.getMessage()), false);
             return 0;
         }
-        return 1;
     }
 
     public static int teamList(CommandContext<ServerCommandSource> context) {
         String teamName = StringArgumentType.getString(context, "name");
-        return 1;
+        return teamApi.listTeam(teamName, context.getSource());
     }
 
     public static int teamListAll(CommandContext<ServerCommandSource> context) {
-        context.getSource().sendFeedback(() -> Text.literal("Listing teams..."), false);
-        RegionMapConfig.teams.forEach(team -> context.getSource().sendFeedback(() -> Text.literal(team.getName()), false));
-        return 1;
+        return teamApi.listTeams(context.getSource());
     }
 
     public static int teamLeave(CommandContext<ServerCommandSource> context) {
         String teamName = StringArgumentType.getString(context, "name");
-        return 1;
+        return teamApi.leaveTeam(teamName, context.getSource());
+    }
+
+    public static int teamDelete(CommandContext<ServerCommandSource> context) {
+        String teamName = StringArgumentType.getString(context, "name");
+        return teamApi.deleteTeam(teamName, context.getSource());
     }
 }

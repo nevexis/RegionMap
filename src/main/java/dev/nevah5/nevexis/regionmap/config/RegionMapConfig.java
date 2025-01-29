@@ -7,6 +7,7 @@ import de.bluecolored.bluemap.api.gson.MarkerGson;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
+import dev.nevah5.nevexis.regionmap.command.RegionCommand;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Color;
 import dev.nevah5.nevexis.regionmap.model.Team;
@@ -49,6 +50,7 @@ public class RegionMapConfig {
         colors = readConfigFile("colors.json", colorsType);
 
         teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
+        RegionCommand.updateTeamSuggestionProvider();
     }
 
     public static <T> void setupConfigFile(String name, T data) {

@@ -3,6 +3,7 @@ package dev.nevah5.nevexis.regionmap.model;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -12,6 +13,15 @@ public class Team {
     private String name;
     private String displayName;
     private Color color;
+    private List<UUID> members = List.of();
+
+    public void addMember(UUID member) {
+        members.add(member);
+    }
+
+    public void removeMember(UUID member) {
+        members.remove(member);
+    }
 
     public Builder toBuilder() {
         return new Builder(this);
