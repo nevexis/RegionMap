@@ -50,8 +50,38 @@ public class RegionMapConfig {
         colors = readConfigFile("colors.json", colorsType);
 
         teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
-        RegionCommand.updateTeamSuggestionProvider();
     }
+
+    public static <T> void writeConfigFile(String name, T data) {
+        Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, name);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String json = gson.toJson(data);
+
+        try {
+            if (Files.exists(configFile)) {
+                try (BufferedWriter writer = Files.newBufferedWriter(configFile, StandardCharsets.UTF_8)) {
+                    writer.write(json);
+                    LOGGER.info("Data written to config file: " + configFile.toAbsolutePath());
+                }
+            }
+        } catch (IOException ex) {
+            LOGGER.error("Failed to create or write to config file: " + configFile.toAbsolutePath(), ex);
+        }
+    }
+
+    public static void deleteConfigFile(String name) {
+        Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, name);
+
+        try {
+            if (Files.exists(configFile)) {
+                Files.delete(configFile);
+                LOGGER.info("Config file deleted: " + configFile.toAbsolutePath());
+            }
+        } catch (IOException ex) {
+            LOGGER.error("Failed to delete config file: " + configFile.toAbsolutePath(), ex);
+        }
+    }
+
 
     public static <T> void setupConfigFile(String name, T data) {
         Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, name);

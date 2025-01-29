@@ -28,21 +28,19 @@ public class RegionCommand {
     private static final RegionMapApi regionMapApi = new RegionMapApiImpl();
     private static final TeamApi teamApi = new TeamApiImpl();
 
-    private static SuggestionProvider<ServerCommandSource> teamSuggestionProvider;
-
-    public static void updateTeamSuggestionProvider() {
-        teamSuggestionProvider = (context, builder) -> {
-            String[] teams = RegionMapConfig.teams.stream().map(Team::getName).toArray(String[]::new);
-            return CommandSource.suggestMatching(teams, builder);
-        };
-    }
-
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> colorSuggestionProvider = (context, builder) -> {
             String[] colors = RegionMapConfig.colors.stream().map(Color::getName).toArray(String[]::new);
             return CommandSource.suggestMatching(colors, builder);
         };
-        updateTeamSuggestionProvider();
+        SuggestionProvider<ServerCommandSource> teamSuggestionProvider = (context, builder) -> {
+            String[] teams = RegionMapConfig.teams.stream().map(Team::getName).toArray(String[]::new);
+            return CommandSource.suggestMatching(teams, builder);
+        };
+        SuggestionProvider<ServerCommandSource> onlinePlayersProvider = (context, builder) -> {
+            String[] players = context.getSource().getServer().getPlayerNames();
+            return CommandSource.suggestMatching(players, builder);
+        };
         dispatcher.register(CommandManager.literal("region")
                 .then(CommandManager.literal("claim")
                         .then(CommandManager.argument("team", StringArgumentType.string())
@@ -59,6 +57,12 @@ public class RegionCommand {
                         .then(CommandManager.argument("name", StringArgumentType.string())
                                 .executes(RegionCommand::name)))
                 .then(CommandManager.literal("team")
+                        .then(CommandManager.literal("invite")
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .suggests(teamSuggestionProvider)
+                                        .then(CommandManager.argument("player", StringArgumentType.string())
+                                                .suggests(onlinePlayersProvider)
+                                                .executes(RegionCommand::teamInvite))))
                         .then(CommandManager.literal("create")
                                 .then(CommandManager.argument("name", StringArgumentType.string())
                                         .then(CommandManager.argument("color", StringArgumentType.word())
@@ -164,5 +168,11 @@ public class RegionCommand {
     public static int teamDelete(CommandContext<ServerCommandSource> context) {
         String teamName = StringArgumentType.getString(context, "name");
         return teamApi.deleteTeam(teamName, context.getSource());
+    }
+
+    public static int teamInvite(CommandContext<ServerCommandSource> context) {
+        String playerName = StringArgumentType.getString(context, "player");
+        String teamName = StringArgumentType.getString(context, "name");
+        return teamApi.invitePlayer(playerName, teamName, context.getSource());
     }
 }

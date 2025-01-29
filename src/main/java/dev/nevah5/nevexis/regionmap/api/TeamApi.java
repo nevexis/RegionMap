@@ -13,4 +13,6 @@ public interface TeamApi {
     int listTeam(String teamName, ServerCommandSource source);
 
     int listTeams(ServerCommandSource source);
+
+    int invitePlayer(String playerName, String teamName, ServerCommandSource source);
 }
