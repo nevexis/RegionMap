@@ -141,4 +141,34 @@ public class TeamApiImpl implements TeamApi {
         RegionMapConfig.writeConfigFile(TEAM_DIRECTORY + teamName + ".json", team);
         return 1;
     }
+
+    @Override
+    public int kickPlayer(String playerName, String teamName, ServerCommandSource source) {
+        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
+            LOGGER.error("Only players can kick players from teams!");
+            return 0;
+        }
+        Team team = RegionMapConfig.teams.stream().filter(t -> t.getName().equals(teamName)).findFirst().orElse(null);
+        if (team == null) {
+            source.sendFeedback(() -> Text.literal("Team with name " + teamName + " does not exist"), false);
+            return 0;
+        }
+        if (!team.getOwner().equals(source.getEntity().getUuid())) {
+            source.sendFeedback(() -> Text.literal("You are not the owner of this team!"), false);
+            return 0;
+        }
+        Optional<ServerPlayerEntity> kickedPlayer = Optional.ofNullable(source.getServer().getPlayerManager().getPlayer(playerName));
+        if (kickedPlayer.isEmpty()) {
+            source.sendFeedback(() -> Text.literal("Player with name " + playerName + " does not exist or is not online"), false);
+            return 0;
+        }
+        if (!team.getMembers().contains(kickedPlayer.get().getUuid())) {
+            source.sendFeedback(() -> Text.literal("The player is not a member of this team!"), false);
+            return 0;
+        }
+        team.removeMember(kickedPlayer.get().getUuid());
+        source.sendFeedback(() -> Text.literal("Player " + playerName + " removed from team " + teamName), false);
+        RegionMapConfig.writeConfigFile(TEAM_DIRECTORY + teamName + ".json", team);
+        return 1;
+    }
 }

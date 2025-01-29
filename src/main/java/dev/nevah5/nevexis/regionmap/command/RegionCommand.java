@@ -63,6 +63,12 @@ public class RegionCommand {
                                         .then(CommandManager.argument("player", StringArgumentType.string())
                                                 .suggests(onlinePlayersProvider)
                                                 .executes(RegionCommand::teamInvite))))
+                        .then(CommandManager.literal("kick")
+                                .then(CommandManager.argument("name", StringArgumentType.string())
+                                        .suggests(teamSuggestionProvider)
+                                        .then(CommandManager.argument("player", StringArgumentType.string())
+                                                .suggests(onlinePlayersProvider)
+                                                .executes(RegionCommand::teamKick))))
                         .then(CommandManager.literal("create")
                                 .then(CommandManager.argument("name", StringArgumentType.string())
                                         .then(CommandManager.argument("color", StringArgumentType.word())
@@ -155,5 +161,11 @@ public class RegionCommand {
         String playerName = StringArgumentType.getString(context, "player");
         String teamName = StringArgumentType.getString(context, "name");
         return teamApi.invitePlayer(playerName, teamName, context.getSource());
+    }
+
+    public static int teamKick(CommandContext<ServerCommandSource> context) {
+        String playerName = StringArgumentType.getString(context, "player");
+        String teamName = StringArgumentType.getString(context, "name");
+        return teamApi.kickPlayer(playerName, teamName, context.getSource());
     }
 }

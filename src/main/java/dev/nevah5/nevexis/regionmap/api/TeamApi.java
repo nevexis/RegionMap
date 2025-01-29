@@ -1,6 +1,5 @@
 package dev.nevah5.nevexis.regionmap.api;
 
-import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.server.command.ServerCommandSource;
 
 public interface TeamApi {
@@ -15,4 +14,6 @@ public interface TeamApi {
     int listTeams(ServerCommandSource source);
 
     int invitePlayer(String playerName, String teamName, ServerCommandSource source);
+
+    int kickPlayer(String playerName, String teamName, ServerCommandSource source);
 }
