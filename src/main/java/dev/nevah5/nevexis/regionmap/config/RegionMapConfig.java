@@ -3,6 +3,7 @@ package dev.nevah5.nevexis.regionmap.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import de.bluecolored.bluemap.api.gson.MarkerGson;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -101,8 +103,6 @@ public class RegionMapConfig {
         return null;
     }
 
-
-    // TODO: fix  this error on startup
     public static <T> List<T> readConfigFiles(String directory, Type type) {
         Path configDirectory = Paths.get(REGION_MAP_CONFIG_DIRECTORY + directory);
         List<T> data = new ArrayList<>();
@@ -112,11 +112,10 @@ public class RegionMapConfig {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDirectory)) {
                     for (Path file : stream) {
                         if (Files.isRegularFile(file)) {
-                            T result = readConfigFile(file.toString(), type);
-                            if (result != null) {
-                                data.add(result);
-                            } else {
-                                LOGGER.warn("Failed to read file: " + file.getFileName());
+                            try (FileReader reader = new FileReader(file.toFile())) {
+                                data.add(MarkerGson.INSTANCE.fromJson(reader, type));
+                            } catch (IOException ex) {
+                                LOGGER.error("Failed to read config file: " + file.toAbsolutePath(), ex);
                             }
                         }
                     }
