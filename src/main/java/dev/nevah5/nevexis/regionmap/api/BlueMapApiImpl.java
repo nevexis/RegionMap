@@ -34,9 +34,16 @@ public class BlueMapApiImpl implements BlueMapApi {
     private BlueMapAPI api;
 
     public BlueMapApiImpl() {
-        BlueMapAPI.onEnable(api ->
-                this.api = api
-        );
+        BlueMapAPI.onEnable(api -> {
+            this.api = api;
+            loadMarkers();
+        });
+    }
+
+    private void loadMarkers() {
+        RegionMapConfig.regions.forEach(claimedRegion -> {
+            // TODO: implement
+        });
     }
 
     @Override
@@ -48,11 +55,11 @@ public class BlueMapApiImpl implements BlueMapApi {
         final ExtrudeMarker marker = new ExtrudeMarker.Builder()
                 .label("Chunk " + chunk.getChunkX() + ", " + chunk.getChunkZ())
                 .shape(Shape.builder()
-                        .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
-                        .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
-                        .addPoint(toPoint(chunk.getMaxX(), chunk.getMaxZ()))
-                        .addPoint(toPoint(chunk.getMinX(), chunk.getMaxZ()))
-                        .build(),
+                                .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
+                                .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
+                                .addPoint(toPoint(chunk.getMaxX(), chunk.getMaxZ()))
+                                .addPoint(toPoint(chunk.getMinX(), chunk.getMaxZ()))
+                                .build(),
                         EXTRUDE_FROM,
                         EXTRUDE_TO)
                 .fillColor(new Color(255, 0, 0, 0.1f))
@@ -67,7 +74,7 @@ public class BlueMapApiImpl implements BlueMapApi {
             }
         });
 
-        saveMarkerSet(markerSet, name);
+//        RegionMapConfig.setupConfigFile(REGION_DIRECTORY + name.toLowerCase() + ".json", MarkerGson.INSTANCE.toJson(markerSet));
     }
 
     @Override
@@ -94,7 +101,7 @@ public class BlueMapApiImpl implements BlueMapApi {
             }
         });
 
-        saveMarkerSet(markerSet, name);
+        // TODO: save
     }
 
     private Vector2d toPoint(double x, double z) {
@@ -111,13 +118,5 @@ public class BlueMapApiImpl implements BlueMapApi {
             }
         }
         return Optional.empty();
-    }
-
-    private void saveMarkerSet(MarkerSet markerSet, String name) {
-        try (FileWriter writer = new FileWriter(REGION_DIRECTORY + name.toLowerCase() + ".json")) {
-            MarkerGson.INSTANCE.toJson(markerSet, writer);
-        } catch (IOException ex) {
-            LOGGER.error("Failed to save region marker set", ex);
-        }
     }
 }

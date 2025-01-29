@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import de.bluecolored.bluemap.api.gson.MarkerGson;
+import de.bluecolored.bluemap.api.markers.MarkerSet;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
@@ -50,6 +51,8 @@ public class RegionMapConfig {
         colors = readConfigFile("colors.json", colorsType);
 
         teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
+
+        regions = readConfigFiles(BlueMapApiImpl.REGION_DIRECTORY, ClaimedRegion.class);
     }
 
     public static <T> void writeConfigFile(String name, T data) {
@@ -82,7 +85,6 @@ public class RegionMapConfig {
         }
     }
 
-
     public static <T> void setupConfigFile(String name, T data) {
         Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, name);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -97,6 +99,8 @@ public class RegionMapConfig {
                     writer.write(json);
                     LOGGER.info("Data written to config file: " + configFile.toAbsolutePath());
                 }
+            } else {
+                writeConfigFile(name, data);
             }
         } catch (IOException ex) {
             LOGGER.error("Failed to create or write to config file: " + configFile.toAbsolutePath(), ex);
