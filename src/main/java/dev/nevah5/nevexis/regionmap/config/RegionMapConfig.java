@@ -119,7 +119,6 @@ public class RegionMapConfig {
         }
     }
 
-
     public static <T> T readConfigFile(String filename, Type type) {
         Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, filename);
         Gson gson = new Gson();

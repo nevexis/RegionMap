@@ -4,7 +4,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
 
 public interface RegionMapApi {
-    void claim(Entity player, ServerCommandSource source);
+    int claim(Entity player, String teamName, ServerCommandSource source);
 
-    void remove(Entity player, ServerCommandSource source);
+    int remove(Entity player, ServerCommandSource source);
 }

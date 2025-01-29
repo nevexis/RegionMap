@@ -19,6 +19,10 @@ public class Color {
         return new de.bluecolored.bluemap.api.math.Color(red, green, blue, alpha);
     }
 
+    public de.bluecolored.bluemap.api.math.Color getLineColor() {
+        return new de.bluecolored.bluemap.api.math.Color(red, green, blue, alpha * 2.5f);
+    }
+
 
     public static List<Color> getDefaultConfig() {
         String jsonString = "[{\"name\":\"red\",\"red\":255,\"green\":0,\"blue\":0,\"alpha\":0.1},{\"name\":\"green\",\"red\":0,\"green\":255,\"blue\":0,\"alpha\":0.1},{\"name\":\"blue\",\"red\":0,\"green\":0,\"blue\":255,\"alpha\":0.1},{\"name\":\"white\",\"red\":255,\"green\":255,\"blue\":255,\"alpha\":0.1},{\"name\":\"black\",\"red\":0,\"green\":0,\"blue\":0,\"alpha\":0.1},{\"name\":\"yellow\",\"red\":255,\"green\":255,\"blue\":0,\"alpha\":0.1},{\"name\":\"cyan\",\"red\":0,\"green\":255,\"blue\":255,\"alpha\":0.1},{\"name\":\"magenta\",\"red\":255,\"green\":0,\"blue\":255,\"alpha\":0.1}]";

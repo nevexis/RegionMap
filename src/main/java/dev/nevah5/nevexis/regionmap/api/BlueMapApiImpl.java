@@ -11,6 +11,12 @@ import de.bluecolored.bluemap.api.math.Shape;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Chunk;
+import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
+import dev.nevah5.nevexis.regionmap.model.Team;
+import net.minecraft.entity.Entity;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -22,7 +28,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
@@ -31,92 +43,89 @@ public class BlueMapApiImpl implements BlueMapApi {
     private static final float EXTRUDE_FROM = -64;
     private static final float EXTRUDE_TO = 319;
 
-    private BlueMapAPI api;
+    private static BlueMapAPI api;
 
     public BlueMapApiImpl() {
         BlueMapAPI.onEnable(api -> {
-            this.api = api;
+            BlueMapApiImpl.api = api;
             loadMarkers();
         });
     }
 
-    private void loadMarkers() {
-        RegionMapConfig.regions.forEach(claimedRegion -> {
-            // TODO: implement
-        });
+    public static void reloadMarkers() {
+        loadMarkers();
     }
 
-    @Override
-    public void addRegion(final World world, final Chunk chunk, final String name) {
-        MarkerSet markerSet = loadMarkerSet(name).orElseGet(() -> MarkerSet.builder()
-                .label("Team " + name)
-                .build());
+    private static void loadMarkers() {
+        Map<UUID, List<ClaimedRegion>> regionsByTeam = RegionMapConfig.regions.stream()
+                .collect(groupingBy(ClaimedRegion::getTeam));
 
-        final ExtrudeMarker marker = new ExtrudeMarker.Builder()
-                .label("Chunk " + chunk.getChunkX() + ", " + chunk.getChunkZ())
-                .shape(Shape.builder()
-                                .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
-                                .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
-                                .addPoint(toPoint(chunk.getMaxX(), chunk.getMaxZ()))
-                                .addPoint(toPoint(chunk.getMinX(), chunk.getMaxZ()))
-                                .build(),
-                        EXTRUDE_FROM,
-                        EXTRUDE_TO)
-                .fillColor(new Color(255, 0, 0, 0.1f))
-                .build();
-
-        markerSet.getMarkers()
-                .put(name.toLowerCase() + "-chunk-" + chunk.getChunkX() + "-" + chunk.getChunkZ(), marker);
-
-        api.getWorld(world).ifPresent(bmWorld -> {
-            for (BlueMapMap map : bmWorld.getMaps()) {
-                map.getMarkerSets().put(name.toLowerCase() + "-regions", markerSet);
+        for (Map.Entry<UUID, List<ClaimedRegion>> entry : regionsByTeam.entrySet()) {
+            Team team = RegionMapConfig.teams.stream().filter(t -> t.getTeamId().equals(entry.getKey())).findFirst().orElse(null);
+            if (team == null) {
+                LOGGER.error("Failed to load team for region: " + entry.getKey());
+                continue;
             }
-        });
-
-//        RegionMapConfig.setupConfigFile(REGION_DIRECTORY + name.toLowerCase() + ".json", MarkerGson.INSTANCE.toJson(markerSet));
+            loadMarkerSetByTeam(team, entry.getValue());
+        }
     }
 
-    @Override
-    public void removeRegion(World world, Chunk chunk, String name) {
-        final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
+    private static void loadMarkerSetByTeam(Team team, List<ClaimedRegion> regions) {
         MarkerSet markerSet = MarkerSet.builder()
-                .label("Team " + name)
+                .label(team.getDisplayName())
                 .build();
-        if (Files.exists(markerSetPath)) {
-            try (FileReader reader = new FileReader(markerSetPath.toString())) {
-                markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
-            } catch (IOException ex) {
-                LOGGER.error("Failed to load region marker set", ex);
-            }
+
+        for (ClaimedRegion region : regions) {
+            Chunk chunk = region.toChunk();
+            final ExtrudeMarker marker = new ExtrudeMarker.Builder()
+                    .label("Chunk " + region.toChunk().getChunkX() + ", " + region.toChunk().getChunkZ())
+                    .shape(Shape.builder()
+                                    .addPoint(toPoint(chunk.getMinX(), chunk.getMinZ()))
+                                    .addPoint(toPoint(chunk.getMaxX(), chunk.getMinZ()))
+                                    .addPoint(toPoint(chunk.getMaxX(), chunk.getMaxZ()))
+                                    .addPoint(toPoint(chunk.getMinX(), chunk.getMaxZ()))
+                                    .build(),
+                            EXTRUDE_FROM,
+                            EXTRUDE_TO)
+                    .fillColor(team.getColor().getColor())
+                    .lineColor(team.getColor().getLineColor())
+                    .build();
+
+            markerSet.getMarkers()
+                    .put(region.getId().toString(), marker);
         }
 
-        markerSet.getMarkers()
-                .remove(name.toLowerCase() + "-chunk-" + chunk.getChunkX() + "-" + chunk.getChunkZ());
-
-        MarkerSet finalMarkerSet = markerSet;
-        api.getWorld(world).ifPresent(bmWorld -> {
+        api.getWorld(World.OVERWORLD).ifPresent(bmWorld -> {
             for (BlueMapMap map : bmWorld.getMaps()) {
-                map.getMarkerSets().put(name.toLowerCase() + "-regions", finalMarkerSet);
+                map.getMarkerSets().put(team.getTeamId().toString(), markerSet);
             }
         });
-
-        // TODO: save
     }
 
-    private Vector2d toPoint(double x, double z) {
-        return new Vector2d(x, z);
+    @Override
+    public void addRegion(final Entity player, final Team team, ServerCommandSource source) throws IllegalStateException, IllegalArgumentException {
+        // TODO: check if chunk already claimed
+
+        ClaimedRegion region = ClaimedRegion.builder()
+                .team(team.getTeamId())
+                .pos(player.getPos())
+                .setClaimedAt()
+                .build();
+        RegionMapConfig.regions.add(region);
+        RegionMapConfig.setupConfigFile(REGION_DIRECTORY + region.getId() + ".json", region);
     }
 
-    private Optional<MarkerSet> loadMarkerSet(String name) {
-        final Path markerSetPath = Paths.get(REGION_DIRECTORY + name.toLowerCase() + ".json");
-        if (Files.exists(markerSetPath)) {
-            try (FileReader reader = new FileReader(markerSetPath.toString())) {
-                return Optional.of(MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class));
-            } catch (IOException ex) {
-                LOGGER.error("Failed to load region marker set", ex);
-            }
+    @Override
+    public void removeRegion(Entity player, Team team, ServerCommandSource source) throws IllegalStateException {
+        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
+            throw new IllegalStateException("Only players can remove regions!");
         }
-        return Optional.empty();
+        // TODO: implement
+
+        source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
+    }
+
+    private static Vector2d toPoint(double x, double z) {
+        return new Vector2d(x, z);
     }
 }

@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.nevah5.nevexis.regionmap.RegionMap;
+import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApi;
 import dev.nevah5.nevexis.regionmap.api.RegionMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.TeamApi;
@@ -92,12 +93,8 @@ public class RegionCommand {
     }
 
     private static int claim(CommandContext<ServerCommandSource> context) {
-        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
-            LOGGER.error("Only players can claim regions!");
-            return 0;
-        }
-        regionMapApi.claim(context.getSource().getEntity(), context.getSource());
-        return 1;
+        String teamName = StringArgumentType.getString(context, "team");
+        return regionMapApi.claim(context.getSource().getEntity(), teamName, context.getSource());
     }
 
     private static int list(CommandContext<ServerCommandSource> context) {
@@ -106,12 +103,7 @@ public class RegionCommand {
     }
 
     private static int remove(CommandContext<ServerCommandSource> context) {
-        if (!(context.getSource().getEntity() instanceof ServerPlayerEntity)) {
-            LOGGER.error("Only players can remove regions!");
-            return 0;
-        }
-        regionMapApi.remove(context.getSource().getEntity(), context.getSource());
-        return 1;
+        return regionMapApi.remove(context.getSource().getEntity(), context.getSource());
     }
 
     private static int name(CommandContext<ServerCommandSource> context) {
@@ -123,6 +115,7 @@ public class RegionCommand {
     private static int reload(CommandContext<ServerCommandSource> context) {
         try {
             RegionMapConfig.init();
+            BlueMapApiImpl.reloadMarkers();
             context.getSource().sendFeedback(() -> Text.literal("Region reloaded!"), false);
         } catch (Exception ex) {
             LOGGER.error("Failed to reload mod: " + ex.getMessage());
