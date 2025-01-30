@@ -48,6 +48,8 @@ public class RegionCommand {
                                 .suggests(teamSuggestionProvider)
                                 .executes(RegionCommand::claim)))
                 .then(CommandManager.literal("merge")
+                        .then(CommandManager.argument("name", StringArgumentType.greedyString())
+                                .executes(RegionCommand::merge))
                         .executes(RegionCommand::merge))
                 .then(CommandManager.literal("list")
                         .executes(RegionCommand::list))
@@ -56,9 +58,6 @@ public class RegionCommand {
                 .then(CommandManager.literal("reload")
                         .executes(RegionCommand::reload)
                         .requires(source -> source.hasPermissionLevel(2)))
-                .then(CommandManager.literal("name") // TODO: implement naming regions
-                        .then(CommandManager.argument("name", StringArgumentType.string())
-                                .executes(RegionCommand::name)))
                 .then(CommandManager.literal("team")
                         .then(CommandManager.literal("invite")
                                 .then(CommandManager.argument("team", StringArgumentType.string())
@@ -105,18 +104,12 @@ public class RegionCommand {
     }
 
     private static int merge(CommandContext<ServerCommandSource> context) {
-        context.getSource().sendFeedback(() -> Text.literal("Merging regions..."), false);
-        return 1;
+        String name = StringArgumentType.getString(context, "name");
+        return regionMapApi.merge(context.getSource().getEntity(), name, context.getSource());
     }
 
     private static int remove(CommandContext<ServerCommandSource> context) {
         return regionMapApi.remove(context.getSource().getEntity(), context.getSource());
-    }
-
-    private static int name(CommandContext<ServerCommandSource> context) {
-        String name = StringArgumentType.getString(context, "name");
-        context.getSource().sendFeedback(() -> Text.literal("Region named: " + name), false);
-        return 1;
     }
 
     private static int reload(CommandContext<ServerCommandSource> context) {

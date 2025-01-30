@@ -58,7 +58,12 @@ public class RegionMapApiImpl implements RegionMapApi {
     }
 
     @Override
-    public int merge(Entity player, ServerCommandSource source) {
+    public int merge(Entity player, String name, ServerCommandSource source) {
+        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
+            source.sendFeedback(() -> Text.literal("Only players can merge claimed regions!"), false);
+            return 0;
+        }
+
         return 0;
     }
 
