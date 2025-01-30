@@ -3,6 +3,7 @@ package dev.nevah5.nevexis.regionmap.api;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Chunk;
+import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class RegionMapApiImpl implements RegionMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
@@ -26,7 +28,7 @@ public class RegionMapApiImpl implements RegionMapApi {
         }
         Team team = RegionMapConfig.teams.stream().filter(t -> t.getName().equalsIgnoreCase(teamName)).findFirst().orElse(null);
         if (team == null) {
-            source.sendFeedback(() -> Text.literal("Team "+ teamName +" doesn't exist!"), false);
+            source.sendFeedback(() -> Text.literal("Team " + teamName + " doesn't exist!"), false);
             return 0;
         }
         if (!team.getMembers().contains(Objects.requireNonNull(source.getEntity()).getUuid()) && !team.getOwner().equals(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
@@ -44,6 +46,7 @@ public class RegionMapApiImpl implements RegionMapApi {
         return 1;
     }
 
+    // TODO: test this
     @Override
     public int remove(Entity player, ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
@@ -51,16 +54,30 @@ public class RegionMapApiImpl implements RegionMapApi {
             return 0;
         }
 
-        // TODO: get team and validate
-//        Team team = RegionMapConfig.teams.stream().filter(t -> t.getName().equalsIgnoreCase(teamName)).findFirst().orElse(null);
-//        if (team == null) {
-//            source.sendFeedback(() -> Text.literal("Team "+ teamName +" doesn't exist!"), false);
-//            return 0;
-//        }
+        Chunk chunk = Chunk.fromPlayerPos(player.getPos());
+        Optional<ClaimedRegion> region = RegionMapConfig.regions.stream()
+                .filter(claimedRegion -> claimedRegion.toChunk().equals(chunk))
+                .findFirst();
 
-//        final Chunk chunk = Chunk.fromPlayerPos(player);
-//        blueMapApi.removeRegion(player.getWorld(), chunk, player.getNameForScoreboard());
-        source.sendFeedback(() -> Text.literal("Not yet implemented!"), false);
-        return 0;
+        if(region.isEmpty()) {
+            source.sendFeedback(() -> Text.literal("You have to be in a claimed chunk."), false);
+            return 0;
+        }
+        Team team = RegionMapConfig.teams.stream().filter(t -> t.getTeamId().equals(region.get().getTeam())).findFirst().orElse(null);
+        if (team == null) {
+            source.sendFeedback(() -> Text.literal("Failed to load team for region: " + region.get().getTeam()), false);
+            return 0;
+        }
+        if(!team.getOwner().equals(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
+            source.sendFeedback(() -> Text.literal("You are not the owner of this region!"), false);
+            return 0;
+        }
+        region.ifPresent(r -> {
+            RegionMapConfig.regions.remove(r);
+            RegionMapConfig.deleteConfigFile(BlueMapApiImpl.REGION_DIRECTORY + r.getRegionId() + ".json");
+            source.sendFeedback(() -> Text.literal("Region removed!"), false);
+            // TODO: reload bluemap
+        });
+        return 1;
     }
 }
