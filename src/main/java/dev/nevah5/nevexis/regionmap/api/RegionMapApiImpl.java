@@ -26,6 +26,17 @@ public class RegionMapApiImpl implements RegionMapApi {
             source.sendFeedback(() -> Text.literal("Only players can claim regions!"), false);
             return 0;
         }
+
+        Chunk chunk = Chunk.fromPlayerPos(player.getPos());
+        Optional<ClaimedRegion> region = RegionMapConfig.regions.stream()
+                .filter(claimedRegion -> claimedRegion.toChunk().equals(chunk))
+                .findFirst();
+
+        if (region.isPresent()) {
+            source.sendFeedback(() -> Text.literal("This chunk is already claimed!"), false);
+            return 0;
+        }
+
         Team team = RegionMapConfig.teams.stream().filter(t -> t.getName().equalsIgnoreCase(teamName)).findFirst().orElse(null);
         if (team == null) {
             source.sendFeedback(() -> Text.literal("Team " + teamName + " doesn't exist!"), false);
@@ -46,7 +57,11 @@ public class RegionMapApiImpl implements RegionMapApi {
         return 1;
     }
 
-    // TODO: test this
+    @Override
+    public int merge(Entity player, ServerCommandSource source) {
+        return 0;
+    }
+
     @Override
     public int remove(Entity player, ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
@@ -59,7 +74,7 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .filter(claimedRegion -> claimedRegion.toChunk().equals(chunk))
                 .findFirst();
 
-        if(region.isEmpty()) {
+        if (region.isEmpty()) {
             source.sendFeedback(() -> Text.literal("You have to be in a claimed chunk."), false);
             return 0;
         }
@@ -68,7 +83,7 @@ public class RegionMapApiImpl implements RegionMapApi {
             source.sendFeedback(() -> Text.literal("Failed to load team for region: " + region.get().getTeam()), false);
             return 0;
         }
-        if(!team.getOwner().equals(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
+        if (!team.getOwner().equals(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
             source.sendFeedback(() -> Text.literal("You are not the owner of this region!"), false);
             return 0;
         }

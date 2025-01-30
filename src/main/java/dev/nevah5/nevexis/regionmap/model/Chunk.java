@@ -1,5 +1,6 @@
 package dev.nevah5.nevexis.regionmap.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.entity.Entity;
@@ -10,6 +11,7 @@ import net.minecraft.util.math.Vec3d;
 
 @RequiredArgsConstructor
 @Getter
+@EqualsAndHashCode
 public class Chunk {
     private final ChunkPos pos;
     private final int chunkX;

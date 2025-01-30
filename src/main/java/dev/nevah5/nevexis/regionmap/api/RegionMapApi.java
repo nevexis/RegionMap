@@ -6,5 +6,7 @@ import net.minecraft.server.command.ServerCommandSource;
 public interface RegionMapApi {
     int claim(Entity player, String teamName, ServerCommandSource source);
 
+    int merge(Entity player, ServerCommandSource source);
+
     int remove(Entity player, ServerCommandSource source);
 }
