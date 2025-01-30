@@ -12,6 +12,7 @@ import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Chunk;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
+import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -84,8 +85,16 @@ public class BlueMapApiImpl implements BlueMapApi {
         MarkerSet markerSet = MarkerSet.builder()
                 .label(team.getDisplayName())
                 .build();
+        // get all unique region groups from claimed regions
+        Map<RegionGroup, List<ClaimedRegion>> regionsByGroup = regions.stream()
+                .filter(region -> region.getRegionGroup() != null)
+                .collect(groupingBy(ClaimedRegion::getRegionGroup));
 
+        // load single chunks
         for (ClaimedRegion region : regions) {
+            if(region.getRegionGroup() != null) {
+                continue;
+            }
             Chunk chunk = region.toChunk();
             final ExtrudeMarker marker = new ExtrudeMarker.Builder()
                     .label(region.getRegionName())
@@ -103,6 +112,36 @@ public class BlueMapApiImpl implements BlueMapApi {
 
             markerSet.getMarkers()
                     .put(region.getRegionId(), marker);
+        }
+
+        // load region groups
+        for (Map.Entry<RegionGroup, List<ClaimedRegion>> entry : regionsByGroup.entrySet()) {
+            Double minX = entry.getValue()
+                    .stream()
+                    .map(ClaimedRegion::toChunk)
+                    .map(Chunk::getMinX)
+                    .min(Double::compareTo)
+                    .orElse(0d);
+            Double minZ = entry.getValue()
+                    .stream()
+                    .map(ClaimedRegion::toChunk)
+                    .map(Chunk::getMinZ)
+                    .min(Double::compareTo)
+                    .orElse(0d);
+            Double maxX = entry.getValue()
+                    .stream()
+                    .map(ClaimedRegion::toChunk)
+                    .map(Chunk::getMaxX)
+                    .max(Double::compareTo)
+                    .orElse(0d);
+            Double maxZ = entry.getValue()
+                    .stream()
+                    .map(ClaimedRegion::toChunk)
+                    .map(Chunk::getMaxX)
+                    .max(Double::compareTo)
+                    .orElse(0d);
+
+            // TODO: implement
         }
 
         // TODO: multi-world support

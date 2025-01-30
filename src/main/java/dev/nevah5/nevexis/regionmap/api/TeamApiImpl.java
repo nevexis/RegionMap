@@ -17,6 +17,8 @@ import static dev.nevah5.nevexis.regionmap.config.RegionMapConfig.setupConfigFil
 public class TeamApiImpl implements TeamApi {
     public static final String TEAM_DIRECTORY = "teams/";
 
+    // TODO: delete regions of team
+
     @Override
     public int createTeam(String teamName, String color, String display, ServerCommandSource source) {
 
