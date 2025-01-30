@@ -47,6 +47,8 @@ public class RegionCommand {
                         .then(CommandManager.argument("team", StringArgumentType.string())
                                 .suggests(teamSuggestionProvider)
                                 .executes(RegionCommand::claim)))
+                .then(CommandManager.literal("merge")
+                        .executes(RegionCommand::merge))
                 .then(CommandManager.literal("list")
                         .executes(RegionCommand::list))
                 .then(CommandManager.literal("remove")
@@ -99,6 +101,11 @@ public class RegionCommand {
 
     private static int list(CommandContext<ServerCommandSource> context) {
         context.getSource().sendFeedback(() -> Text.literal("Listing regions..."), false);
+        return 1;
+    }
+
+    private static int merge(CommandContext<ServerCommandSource> context) {
+        context.getSource().sendFeedback(() -> Text.literal("Merging regions..."), false);
         return 1;
     }
 
