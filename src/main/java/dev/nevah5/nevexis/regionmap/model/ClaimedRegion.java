@@ -9,9 +9,15 @@ import java.util.UUID;
 @Builder
 @Data
 public class ClaimedRegion {
+    private UUID id;
     private Vec3d pos;
     private UUID team;
     private int claimedAt;
+    private RegionGroup regionGroup;
+
+    public ClaimedRegion() {
+        this.id = UUID.randomUUID();
+    }
 
     public String getRegionId() {
         Chunk chunk = toChunk();

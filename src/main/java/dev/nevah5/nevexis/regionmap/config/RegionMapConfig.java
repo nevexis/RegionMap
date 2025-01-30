@@ -11,6 +11,7 @@ import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
 import dev.nevah5.nevexis.regionmap.command.RegionCommand;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Color;
+import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
