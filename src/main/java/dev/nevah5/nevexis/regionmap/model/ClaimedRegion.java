@@ -11,15 +11,12 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class ClaimedRegion {
-    private UUID id;
+    @Builder.Default
+    private UUID id = UUID.randomUUID();
     private Vec3d pos;
     private UUID team;
     private int claimedAt;
     private RegionGroup regionGroup;
-
-    public ClaimedRegion() {
-        this.id = UUID.randomUUID();
-    }
 
     public String getRegionId() {
         Chunk chunk = toChunk();
