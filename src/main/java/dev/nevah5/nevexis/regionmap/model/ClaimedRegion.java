@@ -1,5 +1,6 @@
 package dev.nevah5.nevexis.regionmap.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import net.minecraft.util.math.Vec3d;
@@ -8,6 +9,7 @@ import java.util.UUID;
 
 @Builder
 @Data
+@AllArgsConstructor
 public class ClaimedRegion {
     private UUID id;
     private Vec3d pos;
