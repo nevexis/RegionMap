@@ -94,9 +94,10 @@ public class RegionMapApiImpl implements RegionMapApi {
         }
 
         // find all adjacent regions
-        List<ClaimedRegion> teamRegions = RegionMapConfig.regions.stream()
+        List<ClaimedRegion> teamRegions = new ArrayList<>(RegionMapConfig.regions.stream()
                 .filter(r -> r.getTeam().equals(team.getTeamId()))
-                .toList();
+                .toList());
+        teamRegions.remove(region.get());
         List<ClaimedRegion> adjacentRegions = new ArrayList<>();
         adjacentRegions.add(region.get());
         addAdjacentRegionsRecursive(region.get(), adjacentRegions, teamRegions);
@@ -121,23 +122,27 @@ public class RegionMapApiImpl implements RegionMapApi {
         // Check north
         regionsToCheck.stream()
                 .filter(r -> r.toChunk().getChunkX() == region.toChunk().getChunkX() && r.toChunk().getChunkZ() == region.toChunk().getChunkZ() - 1)
-                .findFirst().ifPresent(adjacentRegions::add);
+                .findFirst()
+                .ifPresent(adjacentRegions::add);
         // Check east
         regionsToCheck.stream()
                 .filter(r -> r.toChunk().getChunkX() == region.toChunk().getChunkX() + 1 && r.toChunk().getChunkZ() == region.toChunk().getChunkZ())
-                .findFirst().ifPresent(adjacentRegions::add);
+                .findFirst()
+                .ifPresent(adjacentRegions::add);
         // Check south
         regionsToCheck.stream()
                 .filter(r -> r.toChunk().getChunkX() == region.toChunk().getChunkX() && r.toChunk().getChunkZ() == region.toChunk().getChunkZ() + 1)
-                .findFirst().ifPresent(adjacentRegions::add);
+                .findFirst()
+                .ifPresent(adjacentRegions::add);
         // Check west
         regionsToCheck.stream()
                 .filter(r -> r.toChunk().getChunkX() == region.toChunk().getChunkX() - 1 && r.toChunk().getChunkZ() == region.toChunk().getChunkZ())
-                .findFirst().ifPresent(adjacentRegions::add);
+                .findFirst()
+                .ifPresent(adjacentRegions::add);
 
         for (ClaimedRegion adjacentRegion : adjacentRegions) {
             if(regions.contains(adjacentRegion)) {
-                return;
+                continue;
             }
             regions.add(adjacentRegion);
             addAdjacentRegionsRecursive(adjacentRegion, regions, regionsToCheck);
