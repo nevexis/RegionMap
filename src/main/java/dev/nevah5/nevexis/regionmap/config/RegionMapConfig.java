@@ -40,7 +40,7 @@ public class RegionMapConfig {
         setupConfigDirectory("");
         setupConfigDirectory(BlueMapApiImpl.REGION_DIRECTORY);
         setupConfigDirectory(TeamApiImpl.TEAM_DIRECTORY);
-        setupConfigFile("colors.json", Color.getDefaultConfig());
+        setupConfigFile("colors.json", Color.getDefaultConfig(), false);
 
         loadData();
 
@@ -86,7 +86,12 @@ public class RegionMapConfig {
         }
     }
 
+
     public static <T> void setupConfigFile(String name, T data) {
+        setupConfigFile(name, data, false);
+    }
+
+    public static <T> void setupConfigFile(String name, T data, boolean overwrite) {
         Path configFile = Paths.get(REGION_MAP_CONFIG_DIRECTORY, name);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(data);
@@ -100,7 +105,7 @@ public class RegionMapConfig {
                     writer.write(json);
                     LOGGER.info("Data written to config file: " + configFile.toAbsolutePath());
                 }
-            } else {
+            } else if(overwrite) {
                 writeConfigFile(name, data);
             }
         } catch (IOException ex) {
