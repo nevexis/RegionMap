@@ -76,7 +76,7 @@ public class RegionMapApiImpl implements RegionMapApi {
             RegionMapConfig.regions.remove(r);
             RegionMapConfig.deleteConfigFile(BlueMapApiImpl.REGION_DIRECTORY + r.getRegionId() + ".json");
             source.sendFeedback(() -> Text.literal("Region removed!"), false);
-            // TODO: reload bluemap
+            BlueMapApiImpl.reloadTeamMarkers(team);
         });
         return 1;
     }

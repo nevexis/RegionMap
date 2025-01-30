@@ -56,6 +56,10 @@ public class BlueMapApiImpl implements BlueMapApi {
         loadMarkers();
     }
 
+    public static void reloadTeamMarkers(Team team) {
+        loadMarkerSetByTeam(team);
+    }
+
     private static void loadMarkers() {
         Map<UUID, List<ClaimedRegion>> regionsByTeam = RegionMapConfig.regions.stream()
                 .collect(groupingBy(ClaimedRegion::getTeam));
