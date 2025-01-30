@@ -171,7 +171,7 @@ public class BlueMapApiImpl implements BlueMapApi {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             throw new IllegalStateException("Only players can remove regions!");
         }
-        // TODO: implement
+        // TODO: remove because everything is always re-rendered
 
         source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
     }
