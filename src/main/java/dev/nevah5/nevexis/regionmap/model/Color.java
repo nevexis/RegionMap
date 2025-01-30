@@ -20,7 +20,7 @@ public class Color {
     }
 
     public de.bluecolored.bluemap.api.math.Color getLineColor() {
-        return new de.bluecolored.bluemap.api.math.Color(red, green, blue, alpha * 2.5f);
+        return new de.bluecolored.bluemap.api.math.Color(red, green, blue, alpha + 0.3f);
     }
 
 
