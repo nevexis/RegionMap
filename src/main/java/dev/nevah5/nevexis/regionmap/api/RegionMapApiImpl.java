@@ -265,6 +265,13 @@ public class RegionMapApiImpl implements RegionMapApi {
     }
 
     @Override
+    public int unmerge(Entity player, ServerCommandSource source) {
+        // TODO: implement
+        source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
+        return 0;
+    }
+
+    @Override
     public int remove(Entity player, ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             source.sendFeedback(() -> Text.literal("Only players can remove claimed regions!"), false);

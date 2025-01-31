@@ -8,5 +8,7 @@ public interface RegionMapApi {
 
     int merge(Entity player, String name, ServerCommandSource source);
 
+    int unmerge(Entity player, ServerCommandSource source);
+
     int remove(Entity player, ServerCommandSource source);
 }

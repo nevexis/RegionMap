@@ -46,6 +46,8 @@ public class RegionCommand {
                 .then(CommandManager.literal("merge")
                         .then(CommandManager.argument("name", StringArgumentType.greedyString())
                                 .executes(RegionCommand::merge)))
+                        .then(CommandManager.literal("unmerge")
+                                .executes(RegionCommand::unmerge))
                 .then(CommandManager.literal("list")
                         .executes(RegionCommand::list))
                 .then(CommandManager.literal("remove")
@@ -101,6 +103,10 @@ public class RegionCommand {
     private static int merge(CommandContext<ServerCommandSource> context) {
         String name = StringArgumentType.getString(context, "name");
         return regionMapApi.merge(context.getSource().getEntity(), name, context.getSource());
+    }
+
+    private static int unmerge(CommandContext<ServerCommandSource> context) {
+        return regionMapApi.unmerge(context.getSource().getEntity(), context.getSource());
     }
 
     private static int remove(CommandContext<ServerCommandSource> context) {
