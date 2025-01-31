@@ -83,7 +83,7 @@ public class RegionMapApiImpl implements RegionMapApi {
             return 0;
         }
 
-        if (!team.getOwner().equals(source.getEntity().getUuid()) && team.getMembers().contains(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)){
+        if (!team.getOwner().equals(source.getEntity().getUuid()) && team.getMembers().contains(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
             source.sendFeedback(() -> Text.literal("You have to be a member of the team " + team.getName() + " to merge!"), false);
             return 0;
         }
@@ -93,14 +93,20 @@ public class RegionMapApiImpl implements RegionMapApi {
             return 0;
         }
 
-        // find all adjacent regions
         List<ClaimedRegion> teamRegions = new ArrayList<>(RegionMapConfig.regions.stream()
                 .filter(r -> r.getTeam().equals(team.getTeamId()))
                 .toList());
-        teamRegions.remove(region.get());
+
+        // find all adjacent regions and add them to list
         List<ClaimedRegion> adjacentRegions = new ArrayList<>();
+        teamRegions.remove(region.get()); // to not add it twice while running recursive function
         adjacentRegions.add(region.get());
         addAdjacentRegionsRecursive(region.get(), adjacentRegions, teamRegions);
+
+        if (!checkUnclaimedChunksInBetween(adjacentRegions)) {
+            source.sendFeedback(() -> Text.literal("There are unclaimed chunks in between regions! Merging not possible."), false);
+            return 0;
+        }
 
         // merge regions
         RegionGroup regionGroup = RegionGroup.builder()
@@ -115,6 +121,93 @@ public class RegionMapApiImpl implements RegionMapApi {
         BlueMapApiImpl.reloadTeamMarkers(team);
         source.sendFeedback(() -> Text.literal("Regions merged!"), false);
         return 1;
+    }
+
+    private boolean checkUnclaimedChunksInBetween(final List<ClaimedRegion> adjacentRegions) {
+        int chunkMinX = adjacentRegions.stream()
+                .map(ClaimedRegion::toChunk)
+                .map(Chunk::getChunkX)
+                .min(Integer::compareTo)
+                .orElse(0);
+        int chunkMaxX = adjacentRegions.stream()
+                .map(ClaimedRegion::toChunk)
+                .map(Chunk::getChunkX)
+                .max(Integer::compareTo)
+                .orElse(0);
+        int chunkMinZ = adjacentRegions.stream()
+                .map(ClaimedRegion::toChunk)
+                .map(Chunk::getChunkZ)
+                .min(Integer::compareTo)
+                .orElse(0);
+        int chunkMaxZ = adjacentRegions.stream()
+                .map(ClaimedRegion::toChunk)
+                .map(Chunk::getChunkZ)
+                .max(Integer::compareTo)
+                .orElse(0);
+        List<Chunk> borderEmptyChunks = new ArrayList<>();
+        List<Chunk> emptyChunks = new ArrayList<>();
+        List<Chunk> claimedChunks = adjacentRegions.stream()
+                .map(ClaimedRegion::toChunk)
+                .toList();
+        for (int x = chunkMinX; x <= chunkMaxX; x++) {
+            for (int z = chunkMinZ; z <= chunkMaxZ; z++) {
+                emptyChunks.add(Chunk.fromChunkCoords(x, z));
+            }
+        }
+        emptyChunks.removeIf(claimedChunks::contains);
+        emptyChunks.stream()
+                .filter(c -> c.getChunkX() == chunkMinX ||
+                        c.getChunkX() == chunkMaxX ||
+                        c.getChunkZ() == chunkMinZ ||
+                        c.getChunkZ() == chunkMaxZ)
+                .forEach(c -> {
+                    borderEmptyChunks.add(c);
+                    emptyChunks.remove(c);
+                });
+
+        for (Chunk emptyChunk : emptyChunks) {
+            if (!isEmptyChunkAdjacentToBorderChunkRecursive(borderEmptyChunks, emptyChunks, emptyChunk))
+                return false;
+        }
+
+        return true;
+    }
+
+    private boolean isEmptyChunkAdjacentToBorderChunkRecursive(final List<Chunk> emptyBorderChunks, final List<Chunk> emptyChunks, final Chunk chunk) {
+        if(emptyBorderChunks.contains(chunk))
+            return true;
+
+        List<Chunk> adjacentChunks = new ArrayList<>();
+        // Check north
+        emptyChunks.stream()
+                .filter(c -> c.getChunkX() == chunk.getChunkX() && c.getChunkZ() == chunk.getChunkZ() - 1)
+                .findFirst()
+                .ifPresent(adjacentChunks::add);
+        // Check east
+        emptyChunks.stream()
+                .filter(c -> c.getChunkX() == chunk.getChunkX() + 1 && c.getChunkZ() == chunk.getChunkZ())
+                .findFirst()
+                .ifPresent(adjacentChunks::add);
+        // Check south
+        emptyChunks.stream()
+                .filter(c -> c.getChunkX() == chunk.getChunkX() && c.getChunkZ() == chunk.getChunkZ() + 1)
+                .findFirst()
+                .ifPresent(adjacentChunks::add);
+        // Check west
+        emptyChunks.stream()
+                .filter(c -> c.getChunkX() == chunk.getChunkX() - 1 && c.getChunkZ() == chunk.getChunkZ())
+                .findFirst()
+                .ifPresent(adjacentChunks::add);
+
+        for (Chunk adjacentChunk : adjacentChunks) {
+            boolean isBorderChunk = isEmptyChunkAdjacentToBorderChunkRecursive(emptyBorderChunks, emptyChunks, adjacentChunk);
+            if (isBorderChunk) {
+                emptyBorderChunks.add(chunk);
+                emptyChunks.remove(chunk);
+                return true;
+            }
+        }
+        return false;
     }
 
     private void addAdjacentRegionsRecursive(final ClaimedRegion region, final List<ClaimedRegion> regions, final List<ClaimedRegion> regionsToCheck) {
@@ -141,7 +234,7 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .ifPresent(adjacentRegions::add);
 
         for (ClaimedRegion adjacentRegion : adjacentRegions) {
-            if(regions.contains(adjacentRegion)) {
+            if (regions.contains(adjacentRegion)) {
                 continue;
             }
             regions.add(adjacentRegion);

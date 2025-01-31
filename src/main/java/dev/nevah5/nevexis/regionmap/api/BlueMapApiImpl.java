@@ -122,24 +122,14 @@ public class BlueMapApiImpl implements BlueMapApi {
                     .map(Chunk::getMinX)
                     .min(Double::compareTo)
                     .orElse(0d);
-            Double minZ = entry.getValue()
-                    .stream()
-                    .map(ClaimedRegion::toChunk)
-                    .map(Chunk::getMinZ)
-                    .min(Double::compareTo)
-                    .orElse(0d);
-            Double maxX = entry.getValue()
-                    .stream()
-                    .map(ClaimedRegion::toChunk)
-                    .map(Chunk::getMaxX)
-                    .max(Double::compareTo)
-                    .orElse(0d);
             Double maxZ = entry.getValue()
                     .stream()
                     .map(ClaimedRegion::toChunk)
                     .map(Chunk::getMaxX)
                     .max(Double::compareTo)
                     .orElse(0d);
+
+
 
             // TODO: implement
         }

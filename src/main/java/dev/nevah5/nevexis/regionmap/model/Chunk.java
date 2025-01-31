@@ -40,4 +40,8 @@ public class Chunk {
         final ChunkPos pos = new ChunkPos(new BlockPos((int) position.x, (int) position.y, (int) position.z));
         return new Chunk(pos);
     }
+
+    public static Chunk fromChunkCoords(int x, int z) {
+        return new Chunk(new ChunkPos(x, z));
+    }
 }
