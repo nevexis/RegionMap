@@ -13,16 +13,12 @@ import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
 import dev.nevah5.nevexis.regionmap.model.Color;
 import dev.nevah5.nevexis.regionmap.model.Team;
-import lombok.Setter;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class RegionCommand {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
