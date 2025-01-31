@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class RegionMapApiImpl implements RegionMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
@@ -103,8 +104,15 @@ public class RegionMapApiImpl implements RegionMapApi {
         adjacentRegions.add(region.get());
         addAdjacentRegionsRecursive(region.get(), adjacentRegions, teamRegions);
 
-        if (!checkUnclaimedChunksInBetween(adjacentRegions)) {
-            source.sendFeedback(() -> Text.literal("There are unclaimed chunks in between regions! Merging not possible."), false);
+        // Check if there are unclaimed chunks in between regions
+        try {
+            if (!checkUnclaimedChunksInBetween(adjacentRegions)) {
+                source.sendFeedback(() -> Text.literal("There are unclaimed chunks in between regions! Merging not possible."), false);
+                return 0;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to check unclaimed chunks in between regions: " + e.getMessage(), e);
+            source.sendFeedback(() -> Text.literal("Failed to check unclaimed chunks in between regions: " + e.getMessage()), false);
             return 0;
         }
 
@@ -151,31 +159,39 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .toList();
         for (int x = chunkMinX; x <= chunkMaxX; x++) {
             for (int z = chunkMinZ; z <= chunkMaxZ; z++) {
-                emptyChunks.add(Chunk.fromChunkCoords(x, z));
+                Chunk chunk = Chunk.fromChunkCoords(x, z);
+                emptyChunks.add(chunk);
             }
         }
-        emptyChunks.removeIf(claimedChunks::contains);
-        emptyChunks.stream()
-                .filter(c -> c.getChunkX() == chunkMinX ||
-                        c.getChunkX() == chunkMaxX ||
-                        c.getChunkZ() == chunkMinZ ||
-                        c.getChunkZ() == chunkMaxZ)
-                .forEach(c -> {
-                    borderEmptyChunks.add(c);
-                    emptyChunks.remove(c);
-                });
+        emptyChunks.removeIf(claimedChunks::contains); // filter out claimed chunks
 
         for (Chunk emptyChunk : emptyChunks) {
-            if (!isEmptyChunkAdjacentToBorderChunkRecursive(borderEmptyChunks, emptyChunks, emptyChunk))
+            if (!isEmptyChunkAdjacentToBorderChunkRecursive(borderEmptyChunks, emptyChunks, emptyChunk, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ))
                 return false;
         }
 
         return true;
     }
 
-    private boolean isEmptyChunkAdjacentToBorderChunkRecursive(final List<Chunk> emptyBorderChunks, final List<Chunk> emptyChunks, final Chunk chunk) {
-        if(emptyBorderChunks.contains(chunk))
+    private boolean isEmptyChunkAdjacentToBorderChunkRecursive(
+            final List<Chunk> emptyBorderChunks,
+            final List<Chunk> emptyChunks,
+            final Chunk chunk,
+            final int minX,
+            final int maxX,
+            final int minZ,
+            final int maxZ) {
+        // remove the chunk from emptyChunks list to mark it as checked
+        emptyChunks.remove(chunk);
+
+        if (emptyBorderChunks.contains(chunk))
             return true;
+
+        if (chunk.getChunkX() == minX || chunk.getChunkX() == maxX || chunk.getChunkZ() == minZ || chunk.getChunkZ() == maxZ) {
+            emptyBorderChunks.add(chunk);
+            emptyChunks.remove(chunk);
+            return true;
+        }
 
         List<Chunk> adjacentChunks = new ArrayList<>();
         // Check north
@@ -199,9 +215,15 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .findFirst()
                 .ifPresent(adjacentChunks::add);
 
+        // remove duplicates
+        adjacentChunks = adjacentChunks.stream()
+                .distinct()
+                .collect(Collectors.toList());
+
         for (Chunk adjacentChunk : adjacentChunks) {
-            boolean isBorderChunk = isEmptyChunkAdjacentToBorderChunkRecursive(emptyBorderChunks, emptyChunks, adjacentChunk);
-            if (isBorderChunk) {
+            if (emptyBorderChunks.contains(adjacentChunk))
+                return true;
+            if (isEmptyChunkAdjacentToBorderChunkRecursive(emptyBorderChunks, emptyChunks, adjacentChunk, minX, maxX, minZ, maxZ)) {
                 emptyBorderChunks.add(chunk);
                 emptyChunks.remove(chunk);
                 return true;
