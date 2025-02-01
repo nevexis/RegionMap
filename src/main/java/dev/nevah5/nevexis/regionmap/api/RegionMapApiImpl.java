@@ -297,6 +297,10 @@ public class RegionMapApiImpl implements RegionMapApi {
             source.sendFeedback(() -> Text.literal("You are not the owner of this region!"), false);
             return 0;
         }
+        if (region.get().getRegionGroup() != null) {
+            source.sendFeedback(() -> Text.literal("You cannot remove a chunk from a merged region!"), false);
+            return 0;
+        }
         region.ifPresent(r -> {
             RegionMapConfig.regions.remove(r);
             RegionMapConfig.deleteConfigFile(BlueMapApiImpl.REGION_DIRECTORY + r.getRegionId() + ".json");
