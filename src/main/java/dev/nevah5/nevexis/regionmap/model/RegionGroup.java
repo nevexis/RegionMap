@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Builder
+@Getter
 public class RegionGroup {
+    @Builder.Default
+    private UUID id = UUID.randomUUID();
     private String name;
     private final List<UUID> regions = new ArrayList<>();
 

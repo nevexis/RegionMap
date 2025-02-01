@@ -3,10 +3,8 @@ package dev.nevah5.nevexis.regionmap.api;
 import com.flowpowered.math.vector.Vector2d;
 import de.bluecolored.bluemap.api.BlueMapAPI;
 import de.bluecolored.bluemap.api.BlueMapMap;
-import de.bluecolored.bluemap.api.gson.MarkerGson;
 import de.bluecolored.bluemap.api.markers.ExtrudeMarker;
 import de.bluecolored.bluemap.api.markers.MarkerSet;
-import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Shape;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.config.RegionMapConfig;
@@ -18,21 +16,15 @@ import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -86,13 +78,23 @@ public class BlueMapApiImpl implements BlueMapApi {
                 .label(team.getDisplayName())
                 .build();
         // get all unique region groups from claimed regions
-        Map<RegionGroup, List<ClaimedRegion>> regionsByGroup = regions.stream()
+        Map<RegionGroup, List<ClaimedRegion>> regionsByGroupTmp = regions.stream()
                 .filter(region -> region.getRegionGroup() != null)
                 .collect(groupingBy(ClaimedRegion::getRegionGroup));
+        Map<RegionGroup, List<ClaimedRegion>> regionsByGroup = new HashMap<>();
+        for (Map.Entry<RegionGroup, List<ClaimedRegion>> entry : regionsByGroupTmp.entrySet()) {
+            RegionGroup key = regionsByGroup.keySet().stream()
+                    .filter(regionGroup -> regionGroup.getId().equals(entry.getKey().getId()))
+                    .findFirst()
+                    .orElse(entry.getKey());
+            List<ClaimedRegion> regionsOfGroup = regionsByGroup.getOrDefault(key, new ArrayList<>());
+            regionsOfGroup.addAll(entry.getValue());
+            regionsByGroup.put(key, regionsOfGroup);
+        }
 
         // load single chunks
         for (ClaimedRegion region : regions) {
-            if(region.getRegionGroup() != null) {
+            if (region.getRegionGroup() != null) {
                 continue;
             }
             Chunk chunk = region.toChunk();
@@ -116,22 +118,97 @@ public class BlueMapApiImpl implements BlueMapApi {
 
         // load region groups
         for (Map.Entry<RegionGroup, List<ClaimedRegion>> entry : regionsByGroup.entrySet()) {
-            Double minX = entry.getValue()
-                    .stream()
+            Shape.Builder groupShapeBuilder = Shape.builder();
+            Chunk currentChunk = entry.getValue().stream()
                     .map(ClaimedRegion::toChunk)
-                    .map(Chunk::getMinX)
-                    .min(Double::compareTo)
-                    .orElse(0d);
-            Double maxZ = entry.getValue()
-                    .stream()
-                    .map(ClaimedRegion::toChunk)
-                    .map(Chunk::getMaxX)
-                    .max(Double::compareTo)
-                    .orElse(0d);
+                    .min(Comparator.comparingInt(Chunk::getChunkX)
+                            .thenComparing(Chunk::getChunkZ, Comparator.reverseOrder()))
+                    .orElseThrow(() -> new IllegalStateException("No chunks found"));
 
+            List<Vector2d> points = new ArrayList<>();
+            Vector2d startingPoint = new Vector2d(currentChunk.getMinX(), currentChunk.getMinZ());
+            points.add(startingPoint);
+            Vector2d lastPoint = startingPoint;
+            Map<Vector2d, List<Chunk.Direction>> chunkFromDirections = new HashMap<>();
+            do {
+                Map<Chunk.Direction, Chunk> adjacentChunks = new HashMap<>();
+                Chunk finalCurrentChunk = currentChunk; // tmp for lambda functions
+                entry.getValue()
+                        .stream()
+                        .map(ClaimedRegion::toChunk)
+                        .filter(c -> c.getChunkX() == finalCurrentChunk.getChunkX() && c.getChunkZ() == finalCurrentChunk.getChunkZ() - 1)
+                        .findFirst()
+                        .ifPresent(c -> adjacentChunks.put(Chunk.Direction.NORTH, c));
+                entry.getValue()
+                        .stream()
+                        .map(ClaimedRegion::toChunk)
+                        .filter(c -> c.getChunkX() == finalCurrentChunk.getChunkX() + 1 && c.getChunkZ() == finalCurrentChunk.getChunkZ())
+                        .findFirst()
+                        .ifPresent(c -> adjacentChunks.put(Chunk.Direction.EAST, c));
+                entry.getValue()
+                        .stream()
+                        .map(ClaimedRegion::toChunk)
+                        .filter(c -> c.getChunkX() == finalCurrentChunk.getChunkX() && c.getChunkZ() == finalCurrentChunk.getChunkZ() + 1)
+                        .findFirst()
+                        .ifPresent(c -> adjacentChunks.put(Chunk.Direction.SOUTH, c));
+                entry.getValue()
+                        .stream()
+                        .map(ClaimedRegion::toChunk)
+                        .filter(c -> c.getChunkX() == finalCurrentChunk.getChunkX() - 1 && c.getChunkZ() == finalCurrentChunk.getChunkZ())
+                        .findFirst()
+                        .ifPresent(c -> adjacentChunks.put(Chunk.Direction.WEST, c));
 
+                List<Vector2d> nextPoints = currentChunk.getNextPointsForBlueMap(lastPoint, adjacentChunks);
+                if (nextPoints.size() != 0) {
+                    lastPoint = nextPoints.get(nextPoints.size() - 1);
+                }
+                points.addAll(nextPoints);
 
-            // TODO: implement
+                List<Chunk.Direction> currentChunkDirections = chunkFromDirections.getOrDefault(new Vector2d(currentChunk.getChunkX(), currentChunk.getChunkZ()), new ArrayList<>());
+
+                if (currentChunkDirections.contains(Chunk.Direction.NORTH) && currentChunkDirections.contains(Chunk.Direction.WEST) && adjacentChunks.size() == 4) { // special case where it should end
+                    break;
+                } else if (adjacentChunks.containsKey(Chunk.Direction.WEST) && !currentChunkDirections.contains(Chunk.Direction.WEST)) {
+                    currentChunk = adjacentChunks.get(Chunk.Direction.WEST);
+                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.EAST);
+                } else if (adjacentChunks.containsKey(Chunk.Direction.SOUTH) && !currentChunkDirections.contains(Chunk.Direction.SOUTH)) {
+                    currentChunk = adjacentChunks.get(Chunk.Direction.SOUTH);
+                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.NORTH);
+                } else if (adjacentChunks.containsKey(Chunk.Direction.EAST) && !currentChunkDirections.contains(Chunk.Direction.EAST)) {
+                    currentChunk = adjacentChunks.get(Chunk.Direction.EAST);
+                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.WEST);
+                } else if (adjacentChunks.containsKey(Chunk.Direction.NORTH) && !currentChunkDirections.contains(Chunk.Direction.NORTH)) {
+                    currentChunk = adjacentChunks.get(Chunk.Direction.NORTH);
+                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.SOUTH);
+                } else if (adjacentChunks.size() == 1 && entry.getValue().size() != 2) {
+                    Map.Entry<Chunk.Direction, Chunk> lastChunk = adjacentChunks.entrySet().iterator().next();
+                    currentChunk = lastChunk.getValue();
+                    if (lastChunk.getKey() == Chunk.Direction.NORTH) {
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.SOUTH);
+                    } else if (lastChunk.getKey() == Chunk.Direction.EAST) {
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.WEST);
+                    } else if (lastChunk.getKey() == Chunk.Direction.SOUTH) {
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.NORTH);
+                    } else if (lastChunk.getKey() == Chunk.Direction.WEST) {
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.EAST);
+                    }
+                } else {
+                    LOGGER.error("Failed to find next chunk for region group: " + entry.getKey().getName(), new IllegalStateException("Failed to find next chunk to check"));
+                }
+            } while (lastPoint != startingPoint);
+
+            points.forEach(groupShapeBuilder::addPoint);
+
+            final ExtrudeMarker marker = new ExtrudeMarker.Builder()
+                    .label(entry.getKey().getName())
+                    .shape(groupShapeBuilder.build(),
+                            EXTRUDE_FROM,
+                            EXTRUDE_TO)
+                    .fillColor(team.getColor().getColor())
+                    .lineColor(team.getColor().getLineColor())
+                    .build();
+            markerSet.getMarkers()
+                    .put(entry.getKey().getId().toString(), marker);
         }
 
         // TODO: multi-world support
@@ -142,10 +219,15 @@ public class BlueMapApiImpl implements BlueMapApi {
         });
     }
 
+    private static void addChunkFromDirection(Map<Vector2d, List<Chunk.Direction>> chunks, Chunk chunk, Chunk.Direction direction) {
+        final Vector2d key = new Vector2d(chunk.getChunkX(), chunk.getChunkZ());
+        final List<Chunk.Direction> directions = chunks.getOrDefault(key, new ArrayList<>());
+        directions.add(direction);
+        chunks.put(key, directions);
+    }
+
     @Override
     public void addRegion(final Entity player, final Team team, ServerCommandSource source) throws IllegalStateException, IllegalArgumentException {
-        // TODO: check if chunk already claimed
-
         ClaimedRegion region = ClaimedRegion.builder()
                 .team(team.getTeamId())
                 .pos(player.getPos())

@@ -165,7 +165,8 @@ public class RegionMapApiImpl implements RegionMapApi {
         }
         emptyChunks.removeIf(claimedChunks::contains); // filter out claimed chunks
 
-        for (Chunk emptyChunk : emptyChunks) {
+        List<Chunk> emptyChunksCopy = new ArrayList<>(emptyChunks);
+        for (Chunk emptyChunk : emptyChunksCopy) {
             if (!isEmptyChunkAdjacentToBorderChunkRecursive(borderEmptyChunks, emptyChunks, emptyChunk, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ))
                 return false;
         }
