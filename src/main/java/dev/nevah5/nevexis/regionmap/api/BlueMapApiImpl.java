@@ -169,6 +169,8 @@ public class BlueMapApiImpl implements BlueMapApi {
                 List<Chunk.Direction> currentChunkDirections = chunkFromDirections.getOrDefault(new Vector2d(currentChunk.getChunkX(), currentChunk.getChunkZ()), new ArrayList<>());
 
                 Chunk.Direction lastDirection = currentChunkDirections.size() > 0 ? currentChunkDirections.get(currentChunkDirections.size() - 1) : null;
+                List<Chunk> backoutOptions = new ArrayList<>(adjacentChunks.values());
+                backoutOptions.remove(adjacentChunks.get(lastDirection));
                 if (adjacentChunks.containsKey(Chunk.Direction.WEST) && (!currentChunkDirections.contains(Chunk.Direction.WEST) || lastDirection == Chunk.Direction.NORTH)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.WEST);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.EAST);
@@ -181,6 +183,21 @@ public class BlueMapApiImpl implements BlueMapApi {
                 } else if (adjacentChunks.containsKey(Chunk.Direction.NORTH) && (!currentChunkDirections.contains(Chunk.Direction.NORTH) || lastDirection == Chunk.Direction.EAST)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.NORTH);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.SOUTH);
+                } else if (backoutOptions.size() == 1) {
+                    try {
+                        Chunk.Direction direction = null;
+                        for (Map.Entry<Chunk.Direction, Chunk> e : adjacentChunks.entrySet()) {
+                            if (e.getValue().equals(backoutOptions.get(0))) {
+                                direction = e.getKey();
+                                break;
+                            }
+                        }
+                        currentChunk = adjacentChunks.get(direction);
+                        Chunk.Direction oppositeDirection = Chunk.Direction.getOpposite(direction);
+                        addChunkFromDirection(chunkFromDirections, currentChunk, oppositeDirection);
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to find next chunk for region group: " + entry.getKey().getName(), e);
+                    }
                 } else if (adjacentChunks.size() == 1 && entry.getValue().size() != 2) {
                     Map.Entry<Chunk.Direction, Chunk> lastChunk = adjacentChunks.entrySet().iterator().next();
                     currentChunk = lastChunk.getValue();
