@@ -159,25 +159,26 @@ public class BlueMapApiImpl implements BlueMapApi {
                         .ifPresent(c -> adjacentChunks.put(Chunk.Direction.WEST, c));
 
                 List<Vector2d> nextPoints = currentChunk.getNextPointsForBlueMap(lastPoint, adjacentChunks);
-                if (nextPoints.size() != 0) {
+                if (nextPoints.contains(startingPoint)) {
+                    break;
+                } else if (nextPoints.size() != 0) {
                     lastPoint = nextPoints.get(nextPoints.size() - 1);
                 }
                 points.addAll(nextPoints);
 
                 List<Chunk.Direction> currentChunkDirections = chunkFromDirections.getOrDefault(new Vector2d(currentChunk.getChunkX(), currentChunk.getChunkZ()), new ArrayList<>());
 
-                if (currentChunkDirections.contains(Chunk.Direction.NORTH) && currentChunkDirections.contains(Chunk.Direction.WEST) && adjacentChunks.size() == 4) { // special case where it should end
-                    break;
-                } else if (adjacentChunks.containsKey(Chunk.Direction.WEST) && !currentChunkDirections.contains(Chunk.Direction.WEST)) {
+                Chunk.Direction lastDirection = currentChunkDirections.size() > 0 ? currentChunkDirections.get(currentChunkDirections.size() - 1) : null;
+                if (adjacentChunks.containsKey(Chunk.Direction.WEST) && (!currentChunkDirections.contains(Chunk.Direction.WEST) || lastDirection == Chunk.Direction.NORTH)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.WEST);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.EAST);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.SOUTH) && !currentChunkDirections.contains(Chunk.Direction.SOUTH)) {
+                } else if (adjacentChunks.containsKey(Chunk.Direction.SOUTH) && (!currentChunkDirections.contains(Chunk.Direction.SOUTH) || lastDirection == Chunk.Direction.WEST)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.SOUTH);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.NORTH);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.EAST) && !currentChunkDirections.contains(Chunk.Direction.EAST)) {
+                } else if (adjacentChunks.containsKey(Chunk.Direction.EAST) && (!currentChunkDirections.contains(Chunk.Direction.EAST) || lastDirection == Chunk.Direction.SOUTH)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.EAST);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.WEST);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.NORTH) && !currentChunkDirections.contains(Chunk.Direction.NORTH)) {
+                } else if (adjacentChunks.containsKey(Chunk.Direction.NORTH) && (!currentChunkDirections.contains(Chunk.Direction.NORTH) || lastDirection == Chunk.Direction.EAST)) {
                     currentChunk = adjacentChunks.get(Chunk.Direction.NORTH);
                     addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.SOUTH);
                 } else if (adjacentChunks.size() == 1 && entry.getValue().size() != 2) {
