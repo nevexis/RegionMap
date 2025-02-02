@@ -270,9 +270,50 @@ public class RegionMapApiImpl implements RegionMapApi {
 
     @Override
     public int unmerge(Entity player, ServerCommandSource source) {
-        // TODO: implement
-        source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
-        return 0;
+        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
+            source.sendFeedback(() -> Text.literal("Only players can unmerge a merged regions!"), false);
+            return 0;
+        }
+
+        Chunk chunk = Chunk.fromPlayerPos(player.getPos());
+        Optional<ClaimedRegion> region = RegionMapConfig.regions.stream()
+                .filter(claimedRegion -> claimedRegion.toChunk().equals(chunk))
+                .findFirst();
+
+        if (region.isEmpty()) {
+            source.sendFeedback(() -> Text.literal("You have to be in a claimed chunk."), false);
+            return 0;
+        }
+
+        Team team = RegionMapConfig.teams.stream().filter(t -> t.getTeamId().equals(region.get().getTeam())).findFirst().orElse(null);
+        if (team == null) {
+            source.sendFeedback(() -> Text.literal("Failed to load team for region: " + region.get().getTeam()), false);
+            return 0;
+        }
+
+        if (!team.getOwner().equals(source.getEntity().getUuid()) && !source.hasPermissionLevel(2)) {
+            source.sendFeedback(() -> Text.literal("You have to be the owner of the team '" + team.getName() + "' to unmerge!"), false);
+            return 0;
+        }
+
+        if (region.get().getRegionGroup() == null) {
+            source.sendFeedback(() -> Text.literal("This region is not part of a merged region!"), false);
+            return 0;
+        }
+
+        RegionGroup regionGroup = region.get().getRegionGroup();
+        List<ClaimedRegion> regions = RegionMapConfig.regions.stream()
+                .filter(r -> r.getRegionGroup() != null && r.getRegionGroup().getId().equals(regionGroup.getId()))
+                .toList();
+        regions.forEach(r -> {
+            r.setRegionGroup(null);
+            RegionMapConfig.writeConfigFile(BlueMapApiImpl.REGION_DIRECTORY + r.getRegionId() + ".json", r);
+        });
+
+        BlueMapApiImpl.reloadTeamMarkers(team);
+
+        source.sendFeedback(() -> Text.literal("Unmerged region!"), false);
+        return 1;
     }
 
     @Override
