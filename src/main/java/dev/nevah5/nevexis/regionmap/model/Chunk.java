@@ -90,6 +90,46 @@ public class Chunk {
     }
 
     /**
+     * determines the next directions to check a chunk, from the direction the last chunk came from
+     * @param direction the direction the last chunk came from
+     * @return a list of ordered next directions to check
+     */
+    public List<Direction> getNextDirectionsFromChunkDirection(final Direction direction) {
+        if (direction == Direction.SOUTH) {
+            return Arrays.asList(
+                    Direction.EAST,
+                    Direction.NORTH,
+                    Direction.WEST,
+                    Direction.SOUTH);
+        } else if (direction == Direction.WEST) {
+            return Arrays.asList(
+                    Direction.SOUTH,
+                    Direction.EAST,
+                    Direction.NORTH,
+                    Direction.WEST);
+        } else if (direction == Direction.NORTH) {
+            return Arrays.asList(
+                    Direction.WEST,
+                    Direction.SOUTH,
+                    Direction.EAST,
+                    Direction.NORTH);
+        } else if (direction == Direction.EAST) {
+            return Arrays.asList(
+                    Direction.NORTH,
+                    Direction.WEST,
+                    Direction.SOUTH,
+                    Direction.EAST);
+        } else {
+            return Arrays.asList(
+                    Direction.WEST,
+                    Direction.SOUTH,
+                    Direction.EAST,
+                    Direction.NORTH
+            );
+        }
+    }
+
+    /**
      * gets the next point from the direction there is NO CHUNK AT
      * @param direction where no chunk is located
      * @return the next point

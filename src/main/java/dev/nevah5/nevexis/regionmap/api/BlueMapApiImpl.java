@@ -160,6 +160,8 @@ public class BlueMapApiImpl implements BlueMapApi {
 
                 List<Vector2d> nextPoints = currentChunk.getNextPointsForBlueMap(lastPoint, adjacentChunks);
                 if (nextPoints.contains(startingPoint)) {
+                    nextPoints.remove(startingPoint);
+                    points.addAll(nextPoints);
                     break;
                 } else if (nextPoints.size() != 0) {
                     lastPoint = nextPoints.get(nextPoints.size() - 1);
@@ -171,19 +173,27 @@ public class BlueMapApiImpl implements BlueMapApi {
                 Chunk.Direction lastDirection = currentChunkDirections.size() > 0 ? currentChunkDirections.get(currentChunkDirections.size() - 1) : null;
                 List<Chunk> backoutOptions = new ArrayList<>(adjacentChunks.values());
                 backoutOptions.remove(adjacentChunks.get(lastDirection));
-                if (adjacentChunks.containsKey(Chunk.Direction.WEST) && (!currentChunkDirections.contains(Chunk.Direction.WEST) || lastDirection == Chunk.Direction.NORTH)) {
-                    currentChunk = adjacentChunks.get(Chunk.Direction.WEST);
-                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.EAST);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.SOUTH) && (!currentChunkDirections.contains(Chunk.Direction.SOUTH) || lastDirection == Chunk.Direction.WEST)) {
-                    currentChunk = adjacentChunks.get(Chunk.Direction.SOUTH);
-                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.NORTH);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.EAST) && (!currentChunkDirections.contains(Chunk.Direction.EAST) || lastDirection == Chunk.Direction.SOUTH)) {
-                    currentChunk = adjacentChunks.get(Chunk.Direction.EAST);
-                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.WEST);
-                } else if (adjacentChunks.containsKey(Chunk.Direction.NORTH) && (!currentChunkDirections.contains(Chunk.Direction.NORTH) || lastDirection == Chunk.Direction.EAST)) {
-                    currentChunk = adjacentChunks.get(Chunk.Direction.NORTH);
-                    addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.SOUTH);
-                } else if (backoutOptions.size() == 1) {
+
+                List<Chunk.Direction> nextDirections = currentChunk.getNextDirectionsFromChunkDirection(lastDirection);
+                boolean hasFoundNextChunk = false;
+                for (Chunk.Direction direction : nextDirections) {
+                    if (adjacentChunks.containsKey(direction) && adjacentChunks.size() == currentChunkDirections.stream().distinct().toList().size()) { // other special case
+                        currentChunk = adjacentChunks.get(direction);
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
+                        hasFoundNextChunk = true;
+                        break;
+                    } else if (adjacentChunks.containsKey(direction) && (!currentChunkDirections.contains(direction) || lastDirection == Chunk.Direction.getOpposite(direction))) {
+                        currentChunk = adjacentChunks.get(direction);
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
+                        hasFoundNextChunk = true;
+                        break;
+                    }
+                }
+                if (hasFoundNextChunk) {
+                    continue;
+                }
+
+                if (backoutOptions.size() == 1) {
                     try {
                         Chunk.Direction direction = null;
                         for (Map.Entry<Chunk.Direction, Chunk> e : adjacentChunks.entrySet()) {
