@@ -165,9 +165,17 @@ public class RegionMapApiImpl implements RegionMapApi {
         }
         emptyChunks.removeIf(claimedChunks::contains); // filter out claimed chunks
 
+        // remove border chunks
         List<Chunk> emptyChunksCopy = new ArrayList<>(emptyChunks);
         for (Chunk emptyChunk : emptyChunksCopy) {
-            if (!isEmptyChunkAdjacentToBorderChunkRecursive(emptyChunksCopy, borderEmptyChunks, emptyChunks, emptyChunk, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ))
+            if (emptyChunk.getChunkX() == chunkMinX || emptyChunk.getChunkX() == chunkMaxX || emptyChunk.getChunkZ() == chunkMinZ || emptyChunk.getChunkZ() == chunkMaxZ) {
+                borderEmptyChunks.add(emptyChunk);
+                emptyChunks.remove(emptyChunk);
+            }
+        }
+
+        for (Chunk emptyChunk : emptyChunksCopy) {
+            if (!isEmptyChunkAdjacentToBorderChunkRecursive(emptyChunksCopy, borderEmptyChunks, emptyChunks, emptyChunk, null))
                 return false;
         }
 
@@ -179,21 +187,12 @@ public class RegionMapApiImpl implements RegionMapApi {
             final List<Chunk> emptyBorderChunks,
             final List<Chunk> emptyChunks,
             final Chunk chunk,
-            final int minX,
-            final int maxX,
-            final int minZ,
-            final int maxZ) {
+            final Chunk fromChunk) {
         // remove the chunk from emptyChunks list to mark it as checked
         emptyChunks.remove(chunk);
 
         if (emptyBorderChunks.contains(chunk))
             return true;
-
-        if (chunk.getChunkX() == minX || chunk.getChunkX() == maxX || chunk.getChunkZ() == minZ || chunk.getChunkZ() == maxZ) {
-            emptyBorderChunks.add(chunk);
-            emptyChunks.remove(chunk);
-            return true;
-        }
 
         List<Chunk> adjacentChunks = new ArrayList<>();
         // Check north
@@ -222,10 +221,13 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .distinct()
                 .collect(Collectors.toList());
 
+        if (fromChunk != null)
+            adjacentChunks.remove(fromChunk); // remove the chunk we came from to avoid going back (recursive loop
+
         for (Chunk adjacentChunk : adjacentChunks) {
             if (emptyBorderChunks.contains(adjacentChunk))
                 return true;
-            if (isEmptyChunkAdjacentToBorderChunkRecursive(allEmptyChunk, emptyBorderChunks, emptyChunks, adjacentChunk, minX, maxX, minZ, maxZ)) {
+            if (isEmptyChunkAdjacentToBorderChunkRecursive(allEmptyChunk, emptyBorderChunks, emptyChunks, adjacentChunk, chunk)) {
                 emptyBorderChunks.add(chunk);
                 emptyChunks.remove(chunk);
                 return true;
