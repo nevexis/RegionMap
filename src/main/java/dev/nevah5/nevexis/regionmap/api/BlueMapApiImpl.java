@@ -14,8 +14,6 @@ import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -266,16 +264,6 @@ public class BlueMapApiImpl implements BlueMapApi {
         RegionMapConfig.regions.add(region);
         RegionMapConfig.setupConfigFile(REGION_DIRECTORY + region.getRegionId() + ".json", region);
         loadMarkerSetByTeam(team);
-    }
-
-    @Override
-    public void removeRegion(Entity player, Team team, ServerCommandSource source) throws IllegalStateException {
-        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
-            throw new IllegalStateException("Only players can remove regions!");
-        }
-        // TODO: remove because everything is always re-rendered
-
-        source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
     }
 
     private static Vector2d toPoint(double x, double z) {
