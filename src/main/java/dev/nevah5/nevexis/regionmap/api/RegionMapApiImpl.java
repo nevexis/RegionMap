@@ -153,7 +153,7 @@ public class RegionMapApiImpl implements RegionMapApi {
                 .max(Integer::compareTo)
                 .orElse(0);
         List<Chunk> borderEmptyChunks = new ArrayList<>();
-        List<Chunk> emptyChunks = new ArrayList<>();
+        List<Chunk> emptyChunks = new ArrayList<>(); // list to check still
         List<Chunk> claimedChunks = adjacentRegions.stream()
                 .map(ClaimedRegion::toChunk)
                 .toList();
@@ -167,7 +167,7 @@ public class RegionMapApiImpl implements RegionMapApi {
 
         List<Chunk> emptyChunksCopy = new ArrayList<>(emptyChunks);
         for (Chunk emptyChunk : emptyChunksCopy) {
-            if (!isEmptyChunkAdjacentToBorderChunkRecursive(borderEmptyChunks, emptyChunks, emptyChunk, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ))
+            if (!isEmptyChunkAdjacentToBorderChunkRecursive(emptyChunksCopy, borderEmptyChunks, emptyChunks, emptyChunk, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ))
                 return false;
         }
 
@@ -175,6 +175,7 @@ public class RegionMapApiImpl implements RegionMapApi {
     }
 
     private boolean isEmptyChunkAdjacentToBorderChunkRecursive(
+            final List<Chunk> allEmptyChunk,
             final List<Chunk> emptyBorderChunks,
             final List<Chunk> emptyChunks,
             final Chunk chunk,
@@ -196,22 +197,22 @@ public class RegionMapApiImpl implements RegionMapApi {
 
         List<Chunk> adjacentChunks = new ArrayList<>();
         // Check north
-        emptyChunks.stream()
+        allEmptyChunk.stream()
                 .filter(c -> c.getChunkX() == chunk.getChunkX() && c.getChunkZ() == chunk.getChunkZ() - 1)
                 .findFirst()
                 .ifPresent(adjacentChunks::add);
         // Check east
-        emptyChunks.stream()
+        allEmptyChunk.stream()
                 .filter(c -> c.getChunkX() == chunk.getChunkX() + 1 && c.getChunkZ() == chunk.getChunkZ())
                 .findFirst()
                 .ifPresent(adjacentChunks::add);
         // Check south
-        emptyChunks.stream()
+        allEmptyChunk.stream()
                 .filter(c -> c.getChunkX() == chunk.getChunkX() && c.getChunkZ() == chunk.getChunkZ() + 1)
                 .findFirst()
                 .ifPresent(adjacentChunks::add);
         // Check west
-        emptyChunks.stream()
+        allEmptyChunk.stream()
                 .filter(c -> c.getChunkX() == chunk.getChunkX() - 1 && c.getChunkZ() == chunk.getChunkZ())
                 .findFirst()
                 .ifPresent(adjacentChunks::add);
@@ -224,7 +225,7 @@ public class RegionMapApiImpl implements RegionMapApi {
         for (Chunk adjacentChunk : adjacentChunks) {
             if (emptyBorderChunks.contains(adjacentChunk))
                 return true;
-            if (isEmptyChunkAdjacentToBorderChunkRecursive(emptyBorderChunks, emptyChunks, adjacentChunk, minX, maxX, minZ, maxZ)) {
+            if (isEmptyChunkAdjacentToBorderChunkRecursive(allEmptyChunk, emptyBorderChunks, emptyChunks, adjacentChunk, minX, maxX, minZ, maxZ)) {
                 emptyBorderChunks.add(chunk);
                 emptyChunks.remove(chunk);
                 return true;
