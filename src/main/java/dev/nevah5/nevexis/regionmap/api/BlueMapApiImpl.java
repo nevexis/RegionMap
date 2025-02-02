@@ -160,8 +160,10 @@ public class BlueMapApiImpl implements BlueMapApi {
 
                 List<Vector2d> nextPoints = currentChunk.getNextPointsForBlueMap(lastPoint, adjacentChunks);
                 if (nextPoints.contains(startingPoint)) {
-                    nextPoints.remove(startingPoint);
-                    points.addAll(nextPoints);
+                    int index = nextPoints.indexOf(startingPoint);
+                    if (index != -1) {
+                        nextPoints.subList(index, nextPoints.size()).clear();
+                    }
                     break;
                 } else if (nextPoints.size() != 0) {
                     lastPoint = nextPoints.get(nextPoints.size() - 1);
