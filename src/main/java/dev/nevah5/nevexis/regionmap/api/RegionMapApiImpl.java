@@ -25,6 +25,16 @@ public class RegionMapApiImpl implements RegionMapApi {
     private final BlueMapApi blueMapApi = new BlueMapApiImpl();
 
     @Override
+    public int createMarker(Entity player, String name, ServerCommandSource source) {
+        return 0;
+    }
+
+    @Override
+    public int removeMarker(Entity player, String name, ServerCommandSource source) {
+        return 0;
+    }
+
+    @Override
     public int claim(final Entity player, final String teamName, final ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             source.sendFeedback(() -> Text.literal("Only players can claim regions!"), false);

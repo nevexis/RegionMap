@@ -11,6 +11,7 @@ import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
 import dev.nevah5.nevexis.regionmap.command.RegionCommand;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Color;
+import dev.nevah5.nevexis.regionmap.model.MapMarker;
 import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import org.slf4j.Logger;
@@ -35,10 +36,12 @@ public class RegionMapConfig {
     public static List<Color> colors = new ArrayList<>();
     public static List<Team> teams = new ArrayList<>();
     public static List<ClaimedRegion> regions = new ArrayList<>();
+    public static List<MapMarker> markers = new ArrayList<>();
 
     public static void init() {
         setupConfigDirectory("");
         setupConfigDirectory(BlueMapApiImpl.REGION_DIRECTORY);
+        setupConfigDirectory(BlueMapApiImpl.MARKER_DIRECTORY);
         setupConfigDirectory(TeamApiImpl.TEAM_DIRECTORY);
         setupConfigFile("colors.json", Color.getDefaultConfig(), false);
 
@@ -54,6 +57,7 @@ public class RegionMapConfig {
         teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
 
         regions = readConfigFiles(BlueMapApiImpl.REGION_DIRECTORY, ClaimedRegion.class);
+        markers = readConfigFiles(BlueMapApiImpl.MARKER_DIRECTORY, MapMarker.class);
     }
 
     public static <T> void writeConfigFile(String name, T data) {

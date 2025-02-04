@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
     public static final String REGION_DIRECTORY = "regions/";
+    public static final String MARKER_DIRECTORY = "markers/";
 
     private static final float EXTRUDE_FROM = -64;
     private static final float EXTRUDE_TO = 319;
