@@ -14,8 +14,6 @@ import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +30,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class BlueMapApiImpl implements BlueMapApi {
     public static final Logger LOGGER = LoggerFactory.getLogger(RegionMap.MOD_ID);
     public static final String REGION_DIRECTORY = "regions/";
+    public static final String MARKER_DIRECTORY = "markers/";
 
     private static final float EXTRUDE_FROM = -64;
     private static final float EXTRUDE_TO = 319;
@@ -160,8 +159,10 @@ public class BlueMapApiImpl implements BlueMapApi {
 
                 List<Vector2d> nextPoints = currentChunk.getNextPointsForBlueMap(lastPoint, adjacentChunks);
                 if (nextPoints.contains(startingPoint)) {
-                    nextPoints.remove(startingPoint);
-                    points.addAll(nextPoints);
+                    int index = nextPoints.indexOf(startingPoint);
+                    if (index != -1) {
+                        nextPoints.subList(index, nextPoints.size()).clear();
+                    }
                     break;
                 } else if (nextPoints.size() != 0) {
                     lastPoint = nextPoints.get(nextPoints.size() - 1);
@@ -264,16 +265,6 @@ public class BlueMapApiImpl implements BlueMapApi {
         RegionMapConfig.regions.add(region);
         RegionMapConfig.setupConfigFile(REGION_DIRECTORY + region.getRegionId() + ".json", region);
         loadMarkerSetByTeam(team);
-    }
-
-    @Override
-    public void removeRegion(Entity player, Team team, ServerCommandSource source) throws IllegalStateException {
-        if (!(source.getEntity() instanceof ServerPlayerEntity)) {
-            throw new IllegalStateException("Only players can remove regions!");
-        }
-        // TODO: remove because everything is always re-rendered
-
-        source.sendFeedback(() -> Text.literal("Not implemented yet"), false);
     }
 
     private static Vector2d toPoint(double x, double z) {

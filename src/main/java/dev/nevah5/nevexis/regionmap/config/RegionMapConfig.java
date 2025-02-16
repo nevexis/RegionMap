@@ -4,14 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import de.bluecolored.bluemap.api.gson.MarkerGson;
-import de.bluecolored.bluemap.api.markers.MarkerSet;
 import dev.nevah5.nevexis.regionmap.RegionMap;
 import dev.nevah5.nevexis.regionmap.api.BlueMapApiImpl;
 import dev.nevah5.nevexis.regionmap.api.TeamApiImpl;
-import dev.nevah5.nevexis.regionmap.command.RegionCommand;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.Color;
-import dev.nevah5.nevexis.regionmap.model.RegionGroup;
+import dev.nevah5.nevexis.regionmap.model.MapMarker;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +33,12 @@ public class RegionMapConfig {
     public static List<Color> colors = new ArrayList<>();
     public static List<Team> teams = new ArrayList<>();
     public static List<ClaimedRegion> regions = new ArrayList<>();
+    public static List<MapMarker> markers = new ArrayList<>();
 
     public static void init() {
         setupConfigDirectory("");
         setupConfigDirectory(BlueMapApiImpl.REGION_DIRECTORY);
+        setupConfigDirectory(BlueMapApiImpl.MARKER_DIRECTORY);
         setupConfigDirectory(TeamApiImpl.TEAM_DIRECTORY);
         setupConfigFile("colors.json", Color.getDefaultConfig(), false);
 
@@ -48,12 +48,14 @@ public class RegionMapConfig {
     }
 
     private static void loadData() {
-        Type colorsType = new TypeToken<List<Color>>() {}.getType();
+        Type colorsType = new TypeToken<List<Color>>() {
+        }.getType();
         colors = readConfigFile("colors.json", colorsType);
 
         teams = readConfigFiles(TeamApiImpl.TEAM_DIRECTORY, Team.class);
 
         regions = readConfigFiles(BlueMapApiImpl.REGION_DIRECTORY, ClaimedRegion.class);
+        markers = readConfigFiles(BlueMapApiImpl.MARKER_DIRECTORY, MapMarker.class);
     }
 
     public static <T> void writeConfigFile(String name, T data) {
@@ -105,7 +107,7 @@ public class RegionMapConfig {
                     writer.write(json);
                     LOGGER.info("Data written to config file: " + configFile.toAbsolutePath());
                 }
-            } else if(overwrite) {
+            } else if (overwrite) {
                 writeConfigFile(name, data);
             }
         } catch (IOException ex) {
