@@ -120,6 +120,9 @@ public class RegionMapApiImpl implements RegionMapApi {
                 source.sendFeedback(() -> Text.literal("There are unclaimed chunks in between regions! Merging not possible."), false);
                 return 0;
             }
+            if (adjacentRegions.size() == 1) {
+                throw new IllegalStateException("You cannot merge a single chunk with itself.");
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to check unclaimed chunks in between regions: " + e.getMessage(), e);
             source.sendFeedback(() -> Text.literal("Failed to check unclaimed chunks in between regions: " + e.getMessage()), false);
