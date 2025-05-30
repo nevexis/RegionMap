@@ -7,9 +7,12 @@ import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +41,13 @@ public class RegionMapApiImpl implements RegionMapApi {
     public int claim(final Entity player, final String teamName, final ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             source.sendFeedback(() -> Text.literal("Only players can claim regions!"), false);
+            return 0;
+        }
+
+        // check if player in main world
+        RegistryKey<World> playerWorldKey = player.getWorld().getRegistryKey();
+        if (playerWorldKey != World.OVERWORLD) {
+            source.sendFeedback(() -> Text.literal("You need to be in the Overworld to run this command."), false);
             return 0;
         }
 
@@ -75,6 +85,13 @@ public class RegionMapApiImpl implements RegionMapApi {
     public int merge(Entity player, String name, ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             source.sendFeedback(() -> Text.literal("Only players can merge claimed regions!"), false);
+            return 0;
+        }
+
+        // check if player in main world
+        RegistryKey<World> playerWorldKey = player.getWorld().getRegistryKey();
+        if (playerWorldKey != World.OVERWORLD) {
+            source.sendFeedback(() -> Text.literal("You need to be in the Overworld to run this command."), false);
             return 0;
         }
 
@@ -286,6 +303,13 @@ public class RegionMapApiImpl implements RegionMapApi {
     public int unmerge(Entity player, ServerCommandSource source) {
         if (!(source.getEntity() instanceof ServerPlayerEntity)) {
             source.sendFeedback(() -> Text.literal("Only players can unmerge a merged regions!"), false);
+            return 0;
+        }
+
+        // check if player in main world
+        RegistryKey<World> playerWorldKey = player.getWorld().getRegistryKey();
+        if (playerWorldKey != World.OVERWORLD) {
+            source.sendFeedback(() -> Text.literal("You need to be in the Overworld to run this command."), false);
             return 0;
         }
 

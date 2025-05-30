@@ -253,7 +253,6 @@ public class BlueMapApiImpl implements BlueMapApi {
                     .put(entry.getKey().getId().toString(), marker);
         }
 
-        // TODO: multi-world support
         api.getWorld(World.OVERWORLD).ifPresent(bmWorld -> {
             for (BlueMapMap map : bmWorld.getMaps()) {
                 map.getMarkerSets().put(team.getTeamId().toString(), markerSet);
