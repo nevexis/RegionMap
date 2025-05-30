@@ -121,7 +121,8 @@ public class RegionMapApiImpl implements RegionMapApi {
                 return 0;
             }
             if (adjacentRegions.size() == 1) {
-                throw new IllegalStateException("You cannot merge a single chunk with itself.");
+                source.sendFeedback(() -> Text.literal("You cannot merge a single chunk with itself."), false);
+                return 0;
             }
         } catch (Exception e) {
             LOGGER.error("Failed to check unclaimed chunks in between regions: " + e.getMessage(), e);
