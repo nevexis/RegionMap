@@ -178,6 +178,13 @@ public class BlueMapApiImpl implements BlueMapApi {
                 List<Chunk.Direction> nextDirections = currentChunk.getNextDirectionsFromChunkDirection(lastDirection);
                 boolean hasFoundNextChunk = false;
                 for (Chunk.Direction direction : nextDirections) {
+                    // only allow directions that are possible from the current point
+                    if (currentChunkDirections.stream().filter(d -> d != lastDirection).toList().size() == 1 && currentChunkDirections.contains(direction)) {
+                        currentChunk = adjacentChunks.get(direction);
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
+                        hasFoundNextChunk = true;
+                        break;
+                    }
                     if (adjacentChunks.containsKey(direction) && adjacentChunks.size() == currentChunkDirections.stream().distinct().toList().size()) { // other special case
                         currentChunk = adjacentChunks.get(direction);
                         addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
