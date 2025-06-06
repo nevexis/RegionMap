@@ -12,6 +12,7 @@ import dev.nevah5.nevexis.regionmap.model.Chunk;
 import dev.nevah5.nevexis.regionmap.model.ClaimedRegion;
 import dev.nevah5.nevexis.regionmap.model.RegionGroup;
 import dev.nevah5.nevexis.regionmap.model.Team;
+import dev.nevah5.nevexis.regionmap.util.LineSimplifier;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.world.World;
@@ -178,6 +179,13 @@ public class BlueMapApiImpl implements BlueMapApi {
                 List<Chunk.Direction> nextDirections = currentChunk.getNextDirectionsFromChunkDirection(lastDirection);
                 boolean hasFoundNextChunk = false;
                 for (Chunk.Direction direction : nextDirections) {
+                    // only allow directions that are possible from the current point
+                    if (currentChunkDirections.stream().filter(d -> d != lastDirection).toList().size() == 1 && currentChunkDirections.contains(direction)) {
+                        currentChunk = adjacentChunks.get(direction);
+                        addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
+                        hasFoundNextChunk = true;
+                        break;
+                    }
                     if (adjacentChunks.containsKey(direction) && adjacentChunks.size() == currentChunkDirections.stream().distinct().toList().size()) { // other special case
                         currentChunk = adjacentChunks.get(direction);
                         addChunkFromDirection(chunkFromDirections, currentChunk, Chunk.Direction.getOpposite(direction));
@@ -226,6 +234,11 @@ public class BlueMapApiImpl implements BlueMapApi {
                 }
             } while (lastPoint != startingPoint);
 
+            // remove points in between
+            LineSimplifier.removeIntermediatePoints(points);
+
+            LineSimplifier.removeDuplicates(points);
+
             points.forEach(groupShapeBuilder::addPoint);
 
             final ExtrudeMarker marker = new ExtrudeMarker.Builder()
@@ -240,7 +253,6 @@ public class BlueMapApiImpl implements BlueMapApi {
                     .put(entry.getKey().getId().toString(), marker);
         }
 
-        // TODO: multi-world support
         api.getWorld(World.OVERWORLD).ifPresent(bmWorld -> {
             for (BlueMapMap map : bmWorld.getMaps()) {
                 map.getMarkerSets().put(team.getTeamId().toString(), markerSet);
@@ -270,4 +282,5 @@ public class BlueMapApiImpl implements BlueMapApi {
     private static Vector2d toPoint(double x, double z) {
         return new Vector2d(x, z);
     }
+
 }
